@@ -6,7 +6,7 @@
 //                        ---
 //              Ethan Development Editor
 // =====================================================
-// @file main.cpp
+// @file utils.h
 // @author Nghia Lam <nghialam12795@gmail.com>
 //
 // @brief
@@ -25,43 +25,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// NOTE(Nghia Lam): This program is currently follow the instruction of:
-//          
-//            https://viewsourcecode.org/snaptoken/kilo/
-//
-// The tutorial is implemented in C, but the goal is a fast, robust modern
-// text editor which is written in C++17
-// Here is a long todo list:
-// ---
-// TODO(Nghia Lam): Walk through the tutorial of kilo.
-// TODO(Nghia Lam): Re-create it in C++17 with data oriented mindset.
-// TODO(Nghia Lam): Support both terminal mode and graphical mode.
+#ifndef EDE_UTILS_H_
+#define EDE_UTILS_H_
 
 // -----------------------------------------------------------------------
 // Import Libraries
 // -----------------------------------------------------------------------
-#include "utils.h"
-
-#include <ctype.h> // for iscntrl()
-#include <stdio.h> // for printf()
+#include <termios.h>    // For termios, tcgetattr(), tcgetattr(), ECHO, TCSAFLUSH
+#include <unistd.h>     // For read(), STDIN_FILENO
 
 // -----------------------------------------------------------------------
-// Entry point
+// Main APIs
 // -----------------------------------------------------------------------
-int main(int argc, char* argv[]) {
-  EDE_InitSettings();
-  
-  char c;
-  while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q') {
-    // NOTE(Nghia Lam): iscntrl test whether a character is a control character.
-    // Control characters are characters which are nonprintable that we dont
-    // want to print to the screen. ASCII codes 0-31 are control characters, and
-    // 127 is also a control character. ASCII codes 32-126 are all printable.
-    if (iscntrl(c))
-      printf("%d\n", c);
-    else
-      printf("%d ('%c')\n", c, c);
-  }
-  
-  return 0;
-}
+void EDE_InitSettings();  // Config the editor when startup
+
+#endif // EDE_UTILS_H_

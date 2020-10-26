@@ -27,10 +27,17 @@
 
 set(EDE_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}/src")
 
-set(SOURCES "${EDE_SRC_DIR}/main.cpp")
+set(HEADERS 
+	"${EDE_SRC_DIR}/utils.h"
+)
+
+set(SOURCES 
+	"${EDE_SRC_DIR}/utils.cpp"
+	"${EDE_SRC_DIR}/main.cpp"
+)
 
 if (WIN32)
-    add_executable(EDE WIN32 ${SOURCES})
+    add_executable(EDE WIN32 ${SOURCES} ${HEADERS})
 else()
-    add_executable(EDE ${SOURCES})
+    add_executable(EDE ${SOURCES} ${HEADERS})
 endif()
