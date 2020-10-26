@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# Auto generate project files
+/build
+/bin
