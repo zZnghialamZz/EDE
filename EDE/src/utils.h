@@ -30,13 +30,16 @@
 
 // -----------------------------------------------------------------------
 // Import Libraries
+// TODO(Nghia Lam): Find a better way to organize this.
 // -----------------------------------------------------------------------
 #include <termios.h>    // For termios, tcgetattr(), tcgetattr(), ECHO, TCSAFLUSH
 #include <unistd.h>     // For read(), STDIN_FILENO
+#include <stdio.h>      // for printf(), perror()
 
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
-void EDE_InitSettings();  // Config the editor when startup
+void EDE_InitSettings();                 // Config the editor when startup
+void EDE_ErrorHandler(const char* s);    // Out the error information
 
 #endif // EDE_UTILS_H_

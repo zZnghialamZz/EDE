@@ -35,23 +35,52 @@
 static termios origin_settings; // Default configuration of terminal
 
 static void DisableRawMode() {
-  tcsetattr(STDIN_FILENO, TCSAFLUSH, &origin_settings);
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &origin_settings) == -1)
+    EDE_ErrorHandler("tcsetattr");
 }
 
 static void EnableRawMode() {
-  tcgetattr(STDIN_FILENO, &origin_settings);
+  if (tcgetattr(STDIN_FILENO, &origin_settings) == -1)
+    EDE_ErrorHandler("tcgetattr");
   atexit(DisableRawMode);
   
   termios raw = origin_settings;
-  // NOTE(Nghia Lam): 
+  
+  // NOTE(Nghia Lam): Input Flags
+  //   - BRKINT turn off the break condition, which will send signal to the
+  // program, just like how Ctrl-C did.
+  //   - IXON disable software flow control like Ctrl-S & Ctrl-Q in terminal
+  // mode. (Ctrl-S stop data being transmitted util you pressed Ctrl-Q).
+  //   - ICRNL fix the Ctrl-M and Enter key to be overlap output 10 byte as
+  // Ctrl-J.
+  //   - INPCK disable parity checking, which doesnt seem to support in
+  // modern terminal emulators.
+  //   - ISTRIP make the 8th bits of each input to be stripped. This may
+  // be already turn off in some systems.
+  raw.c_iflag &= ~(IXON | ICRNL | BRKINT | INPCK | ISTRIP); 
+  // NOTE(Nghia Lam): Output Flags
+  //   - OPOST turn off the post processing output.
+  raw.c_oflag &= ~(OPOST); 
+  // NOTE(Nghia Lam): Set the input character size to be 8 bits per bytes.
+  // Some systems may already set this.
+  raw.c_cflag |= (CS8); 
+  // NOTE(Nghia Lam): Local Flags
   //   - ECHO is a bitflag which allow us to print what we are typing to the 
   // terminal, which maybe useful for some cases, but not in a text editor,
   // so we disable it here in the local flags.
   //   - ICANON is a flag that allow us to disable the canonical mode, this 
   // means that we will finally read input byte-by-byte instead of line-by-line
   // (We can get the input immediately without pressing Enter).
-  raw.c_lflag &= ~(ECHO | ICANON); 
-  tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+  //   - ISIG is a flag which allow us to disable Ctrl-C and Ctrl-Z in 
+  // terminal mode.
+  //   - IEXTEN disable the Ctrl-V function in terminal where it waits for us
+  // to type another character and then send it literally.
+  raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG); 
+  raw.c_cc[VMIN]  = 0; // read() return as soon as possible if there is any input.
+  raw.c_cc[VTIME] = 1; // maximum of time to wait before read(), it is 100ms here.
+  
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) 
+    EDE_ErrorHandler("tcsetattr");
 }
 
 // -----------------------------------------------------------------------
@@ -59,4 +88,9 @@ static void EnableRawMode() {
 // -----------------------------------------------------------------------
 void EDE_InitSettings() {
   EnableRawMode();
+}
+
+void EDE_ErrorHandler(const char* s) {
+  perror(s);
+  exit(1);
 }

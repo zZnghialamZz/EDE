@@ -43,7 +43,7 @@
 #include "utils.h"
 
 #include <ctype.h> // for iscntrl()
-#include <stdio.h> // for printf()
+#include <errno.h> // for errno, EAGAIN
 
 // -----------------------------------------------------------------------
 // Entry point
@@ -51,16 +51,21 @@
 int main(int argc, char* argv[]) {
   EDE_InitSettings();
   
-  char c;
-  while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q') {
+  while (1) {
+    char c = '\0';
+    if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) 
+      EDE_ErrorHandler("read");
+    
     // NOTE(Nghia Lam): iscntrl test whether a character is a control character.
     // Control characters are characters which are nonprintable that we dont
     // want to print to the screen. ASCII codes 0-31 are control characters, and
     // 127 is also a control character. ASCII codes 32-126 are all printable.
     if (iscntrl(c))
-      printf("%d\n", c);
+      printf("%d\r\n", c);
     else
-      printf("%d ('%c')\n", c, c);
+      printf("%d ('%c')\r\n", c, c);
+    
+    if (c == 'q') break;
   }
   
   return 0;
