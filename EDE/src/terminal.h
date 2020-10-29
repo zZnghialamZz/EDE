@@ -6,7 +6,7 @@
 //                        ---
 //              Ethan Development Editor
 // =====================================================
-// @file main.cpp
+// @file terminal.h
 // @author Nghia Lam <nghialam12795@gmail.com>
 //
 // @brief
@@ -25,37 +25,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// NOTE(Nghia Lam): This program is currently follow the instruction of:
-//          
-//            https://viewsourcecode.org/snaptoken/kilo/
-//
-// The tutorial is implemented in C, but the goal is a fast, robust modern
-// text editor which is written in C++17
-// Here is a long todo list:
-// ---
-// TODO(Nghia Lam): Walk through the tutorial of kilo.
-// TODO(Nghia Lam): Re-create it in C++17 with data oriented mindset.
-// TODO(Nghia Lam): Support both terminal mode and graphical mode.
+#ifndef EDE_TERMINAL_H_
+#define EDE_TERMINAL_H_
 
 // -----------------------------------------------------------------------
-// Import Libraries
+// Main APIs
 // -----------------------------------------------------------------------
-#include "utils.h"
-#include "input.h"
-#include "terminal.h"
+void EDE_TermRefreshScreen();                 // Refresh the terminal screen.
+void EDE_TermDrawRows();                      // Drawing the rows primitives.
+int  EDE_TermGetSize(int *cols, int * rows);  // Get the size of the terminal.
 
-// -----------------------------------------------------------------------
-// Entry point
-// -----------------------------------------------------------------------
-int main(int argc, char* argv[]) {
-  EDE_InitSettings();
-  EDE_InitEditor();
-  
-  while (1) {
-    // TODO(Nghia Lam): Check whether we are using GUI mode or terminal mode.
-    EDE_TermRefreshScreen();
-    EDE_ProcessKeyPressed();
-  }
-  
-  return 0;
-}
+#endif // EDE_TERMINAL_H_

@@ -6,7 +6,7 @@
 //                        ---
 //              Ethan Development Editor
 // =====================================================
-// @file main.cpp
+// @file input.h
 // @author Nghia Lam <nghialam12795@gmail.com>
 //
 // @brief
@@ -25,37 +25,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// NOTE(Nghia Lam): This program is currently follow the instruction of:
-//          
-//            https://viewsourcecode.org/snaptoken/kilo/
-//
-// The tutorial is implemented in C, but the goal is a fast, robust modern
-// text editor which is written in C++17
-// Here is a long todo list:
-// ---
-// TODO(Nghia Lam): Walk through the tutorial of kilo.
-// TODO(Nghia Lam): Re-create it in C++17 with data oriented mindset.
-// TODO(Nghia Lam): Support both terminal mode and graphical mode.
+#ifndef EDE_INPUT_H_
+#define EDE_INPUT_H_
+
+#define CTRL_KEY(key) ((key) & 0x1f)
 
 // -----------------------------------------------------------------------
-// Import Libraries
+// Main APIs
 // -----------------------------------------------------------------------
-#include "utils.h"
-#include "input.h"
-#include "terminal.h"
+const char EDE_ReadKey();            // Wait for key press then return the character.
+void       EDE_ProcessKeyPressed();  // Wait for one key press then handle it.
 
-// -----------------------------------------------------------------------
-// Entry point
-// -----------------------------------------------------------------------
-int main(int argc, char* argv[]) {
-  EDE_InitSettings();
-  EDE_InitEditor();
-  
-  while (1) {
-    // TODO(Nghia Lam): Check whether we are using GUI mode or terminal mode.
-    EDE_TermRefreshScreen();
-    EDE_ProcessKeyPressed();
-  }
-  
-  return 0;
-}
+#endif // EDE_INPUT_H_

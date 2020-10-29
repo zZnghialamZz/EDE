@@ -26,25 +26,24 @@
 // limitations under the License.
 
 #include "utils.h"
-
-#include <stdlib.h> // For atexit();
+#include "terminal.h"
 
 // -----------------------------------------------------------------------
 // Static Helpers
 // -----------------------------------------------------------------------
-static termios origin_settings; // Default configuration of terminal
+static EDE_EditorConfig E; // Is this safe?
 
 static void DisableRawMode() {
-  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &origin_settings) == -1)
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.DefaultSettings) == -1)
     EDE_ErrorHandler("tcsetattr");
 }
 
 static void EnableRawMode() {
-  if (tcgetattr(STDIN_FILENO, &origin_settings) == -1)
+  if (tcgetattr(STDIN_FILENO, &E.DefaultSettings) == -1)
     EDE_ErrorHandler("tcgetattr");
   atexit(DisableRawMode);
   
-  termios raw = origin_settings;
+  termios raw = E.DefaultSettings;
   
   // NOTE(Nghia Lam): Input Flags
   //   - BRKINT turn off the break condition, which will send signal to the
@@ -86,11 +85,23 @@ static void EnableRawMode() {
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
+void EDE_InitEditor() {
+  // TODO(Nghia Lam): Checking whether we are using GUI or Terminal mode here
+  if (EDE_TermGetSize(&E.ScreenCols, &E.ScreenRows) == -1)
+    EDE_ErrorHandler("EDE_TermGetSize");
+}
+
 void EDE_InitSettings() {
   EnableRawMode();
 }
 
 void EDE_ErrorHandler(const char* s) {
+  // Clear the screen when exit
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+  write(STDOUT_FILENO, "\x1b[H", 3);
+  // Output error and exit
   perror(s);
   exit(1);
 }
+
+const EDE_EditorConfig& EDE_GetEditorConfig() { return E; }

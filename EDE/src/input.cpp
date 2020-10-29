@@ -6,7 +6,7 @@
 //                        ---
 //              Ethan Development Editor
 // =====================================================
-// @file main.cpp
+// @file input.cpp
 // @author Nghia Lam <nghialam12795@gmail.com>
 //
 // @brief
@@ -25,37 +25,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// NOTE(Nghia Lam): This program is currently follow the instruction of:
-//          
-//            https://viewsourcecode.org/snaptoken/kilo/
-//
-// The tutorial is implemented in C, but the goal is a fast, robust modern
-// text editor which is written in C++17
-// Here is a long todo list:
-// ---
-// TODO(Nghia Lam): Walk through the tutorial of kilo.
-// TODO(Nghia Lam): Re-create it in C++17 with data oriented mindset.
-// TODO(Nghia Lam): Support both terminal mode and graphical mode.
-
-// -----------------------------------------------------------------------
-// Import Libraries
-// -----------------------------------------------------------------------
-#include "utils.h"
 #include "input.h"
-#include "terminal.h"
+#include "utils.h"
+
+#include <errno.h> // for errno, EAGAIN
 
 // -----------------------------------------------------------------------
-// Entry point
+// Main APIs
+// TODO(Nghia Lam): Change to Command system and mapping command.
 // -----------------------------------------------------------------------
-int main(int argc, char* argv[]) {
-  EDE_InitSettings();
-  EDE_InitEditor();
-  
-  while (1) {
-    // TODO(Nghia Lam): Check whether we are using GUI mode or terminal mode.
-    EDE_TermRefreshScreen();
-    EDE_ProcessKeyPressed();
+const char EDE_ReadKey() {
+  char c    = '\0';
+  int nread = 0;
+  while(!(nread = read(STDIN_FILENO, &c, 1))) {
+    if (nread == -1 && errno != EAGAIN) 
+      EDE_ErrorHandler("read");
   }
-  
-  return 0;
+  return c;
+}
+
+void EDE_ProcessKeyPressed() {
+  char c = EDE_ReadKey();
+  switch (c) {
+    // Quit: Ctrl-Q
+    case CTRL_KEY('q'): {
+      // Clear screen when exit
+      write(STDOUT_FILENO, "\x1b[2J", 4);
+      write(STDOUT_FILENO, "\x1b[H", 3);
+      
+      exit(0);
+      break;
+    }
+  }
 }

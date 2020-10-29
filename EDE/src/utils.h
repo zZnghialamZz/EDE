@@ -34,12 +34,25 @@
 // -----------------------------------------------------------------------
 #include <termios.h>    // For termios, tcgetattr(), tcgetattr(), ECHO, TCSAFLUSH
 #include <unistd.h>     // For read(), STDIN_FILENO
+#include <stdlib.h>     // For atexit();
 #include <stdio.h>      // for printf(), perror()
+
+// -----------------------------------------------------------------------
+// Structure and type definition
+// -----------------------------------------------------------------------
+struct EDE_EditorConfig {
+  int ScreenCols;
+  int ScreenRows;
+  termios DefaultSettings;    // Default configuration of terminal
+};
 
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
-void EDE_InitSettings();                 // Config the editor when startup
-void EDE_ErrorHandler(const char* s);    // Out the error information
+void EDE_InitEditor();                         // Init Editor values when startup
+void EDE_InitSettings();                       // Config the editor when startup
+void EDE_ErrorHandler(const char* s);          // Out the error information
+
+const EDE_EditorConfig& EDE_GetEditorConfig(); // Get the global editor config
 
 #endif // EDE_UTILS_H_
