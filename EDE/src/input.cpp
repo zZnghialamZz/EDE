@@ -27,6 +27,7 @@
 
 #include "input.h"
 #include "utils.h"
+#include "command.h"
 
 #include <errno.h> // for errno, EAGAIN
 
@@ -34,18 +35,72 @@
 // Main APIs
 // TODO(Nghia Lam): Change to Command system and mapping command.
 // -----------------------------------------------------------------------
-const char EDE_ReadKey() {
+int EDE_ReadKey() {
   char c    = '\0';
   int nread = 0;
   while(!(nread = read(STDIN_FILENO, &c, 1))) {
     if (nread == -1 && errno != EAGAIN) 
       EDE_ErrorHandler("read");
   }
-  return c;
+  
+  // Handle special command key 
+  // ---
+  // NOTE(Nghia Lam): When ever we meet an escape sequence we will try
+  // to read two more byte to find which key is pressed.  
+  if (c == '\x1b') {
+    char seq[3];
+    
+    if (read(STDIN_FILENO, &seq[0], 1) != 1) return '\x1b';
+    if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b';
+    
+    if (seq[0] == '[') {
+      if (seq[1] >= '0' && seq[1] <= '1') {
+        // NOTE(Nghia Lam): 
+        //   - Page-Up is represent as <Esc>[5~
+        //   - Page-Down is represent as <Esc>[6~
+        if (read(STDIN_FILENO, &seq[2], 1) != 1) return '\x1b';
+        if (seq[2] == '~') {
+          switch (seq[1]) {
+            case '1': return KEY_HOME;
+            case '3': return KEY_DEL;
+            case '4': return KEY_END;
+            case '5': return PAGE_UP;
+            case '6': return PAGE_DOWN;
+            case '7': return KEY_HOME;
+            case '8': return KEY_END;
+          }
+        }
+        
+      } else {
+        // NOTE(Nghia Lam): Since arrow key terminal will return as an escape sequence 
+        // with '\x1b[' follow with A, B, C, D (depend on which arrow is pressed up, 
+        // down, right or left). 
+        switch(seq[1]) {
+          case 'A': return KEY_UP;    // Up arrow key
+          case 'B': return KEY_DOWN;  // Down arrow key
+          case 'C': return KEY_RIGHT; // Right arrow key
+          case 'D': return KEY_LEFT;  // Left arrow key
+          case 'H': return KEY_HOME;  // Home key
+          case 'F': return KEY_END;   // End key
+        }
+      }
+    } else if (seq[0] == 'O') {
+      switch (seq[1]) {
+        case 'H': return KEY_HOME;
+        case 'F': return KEY_END;
+      }
+    }
+    
+    return '\x1b';
+    
+  } else {
+    return c;
+  }
 }
 
+// NOTE(Nghia Lam): Currently using vi-binding for this editor
 void EDE_ProcessKeyPressed() {
-  char c = EDE_ReadKey();
+  int c = EDE_ReadKey();
   switch (c) {
     // Quit: Ctrl-Q
     case CTRL_KEY('q'): {
@@ -56,5 +111,32 @@ void EDE_ProcessKeyPressed() {
       exit(0);
       break;
     }
+    
+    // Cursor Movement
+    case KEY_UP:
+    case KEY_DOWN:
+    case KEY_RIGHT:
+    case KEY_LEFT: {
+      EDE_EditorMoveCursor(c);
+      break;
+    }
+    
+    case PAGE_UP:
+    case PAGE_DOWN: {
+      int times = EDE_GetEditorConfig().ScreenRows;
+      while (--times)
+        EDE_EditorMoveCursor(c == PAGE_UP ? KEY_UP : KEY_DOWN);
+      break;
+    }
+    
+    case KEY_HOME: {
+      EDE_GetEditorConfig().CursorX = 0;
+      break;
+    }
+    case KEY_END: {
+      EDE_GetEditorConfig().CursorX = EDE_GetEditorConfig().ScreenCols - 1;
+      break;
+    }
+    
   }
 }

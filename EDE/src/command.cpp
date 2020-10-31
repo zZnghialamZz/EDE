@@ -6,7 +6,7 @@
 //                        ---
 //              Ethan Development Editor
 // =====================================================
-// @file input.h
+// @file command.cpp
 // @author Nghia Lam <nghialam12795@gmail.com>
 //
 // @brief
@@ -25,30 +25,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef EDE_INPUT_H_
-#define EDE_INPUT_H_
-
-#define CTRL_KEY(key) ((key) & 0x1f)
-
-// -----------------------------------------------------------------------
-// Type Definition & Structure
-// -----------------------------------------------------------------------
-enum EditorKey {
-  KEY_LEFT  = 1000,   // For not overlaping with input key
-  KEY_UP    ,
-  KEY_RIGHT ,
-  KEY_DOWN  ,
-  KEY_DEL   ,
-  KEY_HOME  ,
-  KEY_END   ,
-  PAGE_DOWN ,
-  PAGE_UP   ,
-};
+#include "command.h"
+#include "utils.h"
+#include "input.h"
 
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
-int  EDE_ReadKey();            // Wait for key press then return the character.
-void EDE_ProcessKeyPressed();  // Wait for one key press then handle it.
-
-#endif // EDE_INPUT_H_
+void EDE_EditorMoveCursor(const int key) {
+  switch(key) {
+    case KEY_UP: {
+      if (EDE_GetEditorConfig().CursorY != 0)
+        --EDE_GetEditorConfig().CursorY;
+      break;
+    }
+    case KEY_DOWN: {
+      if (EDE_GetEditorConfig().CursorY != EDE_GetEditorConfig().ScreenRows - 1)
+        ++EDE_GetEditorConfig().CursorY;
+      break;
+    }
+    case KEY_LEFT: {
+      if (EDE_GetEditorConfig().CursorX != 0)
+        --EDE_GetEditorConfig().CursorX;
+      break;
+    }
+    case KEY_RIGHT: {
+      if (EDE_GetEditorConfig().CursorX != EDE_GetEditorConfig().ScreenCols - 1)
+        ++EDE_GetEditorConfig().CursorX;
+      break;
+    }
+  }
+}
