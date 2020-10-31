@@ -35,15 +35,22 @@
 #include <termios.h>    // For termios, tcgetattr(), tcgetattr(), ECHO, TCSAFLUSH
 #include <unistd.h>     // For read(), STDIN_FILENO
 #include <stdlib.h>     // For atexit();
-#include <stdio.h>      // for printf(), perror()
+#include <stdio.h>      // for printf(), perror(), fopen(), getline(), FILE
 
 // -----------------------------------------------------------------------
 // Structure and type definition
 // -----------------------------------------------------------------------
+struct EDE_EditorRows {
+  int Size;
+  char* Chars;
+};
+
 struct EDE_EditorConfig {
   int CursorX, CursorY;
   int ScreenCols;
   int ScreenRows;
+  int DisplayRows;
+  EDE_EditorRows Row;
   termios DefaultSettings;    // Default configuration of terminal
 };
 

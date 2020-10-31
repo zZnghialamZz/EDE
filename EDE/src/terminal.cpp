@@ -79,6 +79,10 @@ void EDE_TermRefreshScreen() {
            EDE_GetEditorConfig().CursorY + 1,                 // Convert to 1-based Index
            EDE_GetEditorConfig().CursorX + 1);                // Convert to 1-based Index
   
+  // Input Drawing Buffer
+  int input_buf = (EDE_GetEditorConfig().Row.Size > EDE_GetEditorConfig().ScreenRows) 
+    ? EDE_GetEditorConfig().ScreenRows : EDE_GetEditorConfig().Row.Size;
+  
   // NOTE(Nghia Lam): A fixed buffer to contain all the command lists for refresh
   // the terminal screen, which included:
   //  - 6: Escape sequence <ESC>[?25l - Hide cursor before re-drawing screen
@@ -87,12 +91,14 @@ void EDE_TermRefreshScreen() {
   //              \r\n for the last row.
   //  - Size for welcome message when open a blank EDE.
   //  - Size for cursor position drawing command.
+  //  - Size for text input drawing command
   //  - 6: Escape sequence <ESC>[?25h - Re-enable cursor after re-drawing screen
   int buffer_size = 15                                        // Size of all Escape sequence command
     + (EDE_GetEditorConfig().ScreenRows * 6 - 2)              // Size of each line drawing command
     + welcome_len                                             // Welcome message's length
     + (EDE_GetEditorConfig().ScreenCols - welcome_len) / 2    // Welcome message's padding (for center)
-    + strlen(cursor_buf);                                     // Cursor position drawing command
+    + strlen(cursor_buf)                                      // Cursor position drawing command
+    + input_buf;                                              // Input drawing command
   
   // This fixed buffer will allocate all the memory require for all the command once.
   // Then we only need to add the character command to it later. This approach will
@@ -115,23 +121,31 @@ void EDE_TermRefreshScreen() {
 
 void EDE_TermDrawRows(FixedBuffer *fb, const char* welcome_msg, int welcome_len) {
   for (int y = 0; y < EDE_GetEditorConfig().ScreenRows; ++y) {
-    if (y == EDE_GetEditorConfig().ScreenRows / 3) {
-      // Center welcome message
-      int padding = (EDE_GetEditorConfig().ScreenCols - welcome_len) / 2;
-      if (padding) {
-        EDE_FixedBufAppend(fb, "~", 1);
-        --padding;
+    if (y >= EDE_GetEditorConfig().DisplayRows) {
+      if (EDE_GetEditorConfig().DisplayRows == 0 && y == EDE_GetEditorConfig().ScreenRows / 3) {
+        // Center welcome message
+        int padding = (EDE_GetEditorConfig().ScreenCols - welcome_len) / 2;
+        if (padding) {
+          EDE_FixedBufAppend(fb, "~", 1);
+          --padding;
+        }
+        while(--padding)
+          EDE_FixedBufAppend(fb, " ", 1);
+        
+        EDE_FixedBufAppend(fb, welcome_msg, welcome_len);
       }
-      while(--padding)
-        EDE_FixedBufAppend(fb, " ", 1);
+      else {
+        EDE_FixedBufAppend(fb, "~", 1);
+      }
       
-      EDE_FixedBufAppend(fb, welcome_msg, welcome_len);
+    } else {
+      int len = EDE_GetEditorConfig().Row.Size;
+      if (len > EDE_GetEditorConfig().ScreenRows)
+        len = EDE_GetEditorConfig().ScreenRows;
+      EDE_FixedBufAppend(fb, EDE_GetEditorConfig().Row.Chars, len);
     }
-    else {
-      EDE_FixedBufAppend(fb, "~", 1);
-    }
-    EDE_FixedBufAppend(fb, "\x1b[K", 3);  // Clear the line
     
+    EDE_FixedBufAppend(fb, "\x1b[K", 3);  // Clear the line
     if (y < EDE_GetEditorConfig().ScreenRows -1)
       EDE_FixedBufAppend(fb, "\r\n", 2);
   }

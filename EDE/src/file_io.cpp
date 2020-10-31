@@ -6,7 +6,7 @@
 //                        ---
 //              Ethan Development Editor
 // =====================================================
-// @file main.cpp
+// @file file_io.cpp
 // @author Nghia Lam <nghialam12795@gmail.com>
 //
 // @brief
@@ -25,46 +25,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// NOTE(Nghia Lam): This program is currently follow the instruction of:
-//          
-//            https://viewsourcecode.org/snaptoken/kilo/
-//
-// The tutorial is implemented in C, but the goal is a fast, robust modern
-// text editor which is written in C++17
-// Here is a long todo list:
-// ---
-// TODO(Nghia Lam): Walk through the tutorial of kilo.
-// TODO(Nghia Lam): Re-create it in C++17 with data oriented mindset.
-// TODO(Nghia Lam): Support both terminal mode and graphical mode.
-
-// Feature tests macros for getline()
-#define _DEFAULT_SOURCE
-#define _BSD_SOURCE
-#define _GNU_SOURCE
-
-// -----------------------------------------------------------------------
-// Import Libraries
-// -----------------------------------------------------------------------
-#include "utils.h"
-#include "input.h"
-#include "terminal.h"
 #include "file_io.h"
+#include "utils.h"
+
+#include <string.h>  // For memcpy()
 
 // -----------------------------------------------------------------------
-// Entry point
+// Main APIs
 // -----------------------------------------------------------------------
-int main(int argc, char* argv[]) {
-  EDE_InitSettings();
-  EDE_InitEditor();
+void EDE_EditorOpen(const char* file_name) {
+  FILE *fp = fopen(file_name, "r");
+  if (!fp) EDE_ErrorHandler("fopen");
   
-  if (argc >= 2)
-    EDE_EditorOpen(argv[1]);
+  char *line = nullptr;
+  size_t linecap = 0;
+  ssize_t linelen = getline(&line, &linecap, fp);
   
-  while (1) {
-    // TODO(Nghia Lam): Check whether we are using GUI mode or terminal mode.
-    EDE_TermRefreshScreen();
-    EDE_ProcessKeyPressed();
+  if (linelen != -1) {
+    while(linelen > 0 && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r'))
+      --linelen;
+    
+    EDE_GetEditorConfig().Row.Size = linelen;
+    EDE_GetEditorConfig().Row.Chars = new char[linelen + 1];
+    memcpy(EDE_GetEditorConfig().Row.Chars, line, linelen);
+    EDE_GetEditorConfig().Row.Chars[linelen] = '\0';
+    EDE_GetEditorConfig().DisplayRows = 1;
   }
   
-  return 0;
+  free(line);
+  fclose(fp);
 }

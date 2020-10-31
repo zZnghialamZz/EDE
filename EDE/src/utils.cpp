@@ -89,6 +89,7 @@ void EDE_InitEditor() {
   // TODO(Nghia Lam): Checking whether we are using GUI or Terminal mode here
   E.CursorX = 0;
   E.CursorY = 0;
+  E.DisplayRows = 0;
   
   if (EDE_TermGetSize(&E.ScreenCols, &E.ScreenRows) == -1)
     EDE_ErrorHandler("EDE_TermGetSize");
