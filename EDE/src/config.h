@@ -6,7 +6,7 @@
 //                        ---
 //              Ethan Development Editor
 // =====================================================
-// @file terminal.h
+// @file config.h
 // @author Nghia Lam <nghialam12795@gmail.com>
 //
 // @brief
@@ -25,18 +25,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef EDE_TERMINAL_H_
-#define EDE_TERMINAL_H_
+#ifndef EDE_CONFIG_H_
+#define EDE_CONFIG_H_
 
-#include "memory.h"
+#define EDE_VERSION   "0.0.1"
 
-// -----------------------------------------------------------------------
-// Main APIs
-// -----------------------------------------------------------------------
-void EDE_TermRefreshScreen();                   // Refresh the terminal screen.
-void EDE_TermDrawRows(FixedBuffer *fb, 
-                      const char* welcome_msg, 
-                      int welcome_len);         // Drawing the rows primitives.
-int  EDE_TermGetSize(int *cols, int * rows);    // Get the size of the terminal.
-
-#endif // EDE_TERMINAL_H_
+#endif //  EDE_CONFIG_H_
