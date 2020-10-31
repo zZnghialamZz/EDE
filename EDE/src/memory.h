@@ -28,6 +28,8 @@
 #ifndef EDE_MEMORY_H_
 #define EDE_MEMORY_H_
 
+#include <string.h>   // For memcpy(), memset()
+
 // -----------------------------------------------------------------------
 // Type Definition & Structure
 // -----------------------------------------------------------------------
@@ -36,7 +38,10 @@ struct FixedBuffer {
   int Index;
   char *Buf;
   
-  FixedBuffer(int size) : Size(size), Index(0) { Buf = new char[Size]; }
+  FixedBuffer(int size) : Size(size), Index(0) { 
+    Buf = new char[Size]; 
+    memset(Buf, 0, Size);
+  }
   ~FixedBuffer() { delete[] Buf; }
 };
 

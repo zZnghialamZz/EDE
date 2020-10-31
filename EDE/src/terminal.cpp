@@ -30,7 +30,7 @@
 #include "config.h"
 
 #include <ctype.h>      // For iscntrl()
-#include <string.h>     // For strlen()
+#include <string.h>     // For strlen(), memset()
 #include <sys/ioctl.h>  // For ioctl(), winsize, TIOCGWINSZ
 
 // -----------------------------------------------------------------------
@@ -72,7 +72,7 @@ void EDE_TermRefreshScreen() {
   }
   
   // Cursor Position Buffer
-  char cursor_buf[32];
+  char cursor_buf[16];
   snprintf(cursor_buf, 
            sizeof(cursor_buf), 
            "\x1b[%d;%dH", 
