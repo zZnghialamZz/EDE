@@ -59,24 +59,36 @@ int EDE_TermGetCursorPosition(int *cols, int *rows) {
 // Main APIs
 // -----------------------------------------------------------------------
 void EDE_TermRefreshScreen() {
-  // NOTE(Nghia Lam): Escape sequence <ESC>[2J - Clear the entire screen
+  // NOTE(Nghia Lam): A fixed buffer to contain all the command lists for refresh
+  // the terminal screen, which included:
+  //  - 4: Escape sequence <ESC>[2J - Clear the entire screen
+  //  - 3: Escape sequence <ESC>[H  - Re-position cursor to top left corner
+  //  - 3: Escape sequence <ESC>[H  - Re-position cursor back after drawing
+  //  - rows * 3: ~\r\n at the begining of each row, then minus 2 byte of \r\n 
+  //    for the last row.
+  int buffer_size = 4 + 3 + 3 + (EDE_GetEditorConfig().ScreenRows * 3 - 2);
+  
+  FixedBuffer fb(buffer_size);
+  
+  // NOTE(Nghia Lam): 
   //   - \x1b: Escape squence (or 27 in decimal) start, follow by [ character
-  write(STDOUT_FILENO, "\x1b[2J", 4);
-  // NOTE(Nghia Lam): Escape sequence <ESC>[H - Re-position cursor to top
-  // left corner.
-  write(STDOUT_FILENO, "\x1b[H", 3);
+  EDE_FixedBufAppend(&fb, "\x1b[2J", 4); // Clear the entire screen
+  EDE_FixedBufAppend(&fb, "\x1b[H", 3);  // Re-position cursor to top left corner
   
-  EDE_TermDrawRows();
+  EDE_TermDrawRows(&fb);
   
-  write(STDOUT_FILENO, "\x1b[H", 3); // Re-position cursor back after drawing
+  EDE_FixedBufAppend(&fb, "\x1b[H", 3);  // Re-position cursor back after drawing
+  
+  write(STDOUT_FILENO, fb.Buf, fb.Size);
+  EDE_FixedBufFree(&fb);
 }
 
-void EDE_TermDrawRows() {
+void EDE_TermDrawRows(FixedBuffer *fb) {
   for (int y = 0; y < EDE_GetEditorConfig().ScreenRows; ++y) {
-    write(STDOUT_FILENO, "~", 1);
+    EDE_FixedBufAppend(fb, "~", 1);
     
     if (y < EDE_GetEditorConfig().ScreenRows -1)
-      write(STDOUT_FILENO, "\r\n", 2);
+      EDE_FixedBufAppend(fb, "\r\n", 2);
   }
 }
 

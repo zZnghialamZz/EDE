@@ -6,7 +6,7 @@
 //                        ---
 //              Ethan Development Editor
 // =====================================================
-// @file terminal.h
+// @file memory.h
 // @author Nghia Lam <nghialam12795@gmail.com>
 //
 // @brief
@@ -25,16 +25,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef EDE_TERMINAL_H_
-#define EDE_TERMINAL_H_
+#ifndef EDE_MEMORY_H_
+#define EDE_MEMORY_H_
 
-#include "memory.h"
+// -----------------------------------------------------------------------
+// Type Definition & Structure
+// -----------------------------------------------------------------------
+struct FixedBuffer {
+  int Size;
+  int Index;
+  char *Buf;
+  
+  FixedBuffer(int size) : Size(size), Index(0) {
+    Buf = &Buf[Size];
+  }
+};
 
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
-void EDE_TermRefreshScreen();                 // Refresh the terminal screen.
-void EDE_TermDrawRows(FixedBuffer *fb);       // Drawing the rows primitives.
-int  EDE_TermGetSize(int *cols, int * rows);  // Get the size of the terminal.
 
-#endif // EDE_TERMINAL_H_
+// Fixed Buffers
+void EDE_FixedBufAppend(FixedBuffer *fb, const char *s, int len);  // Append new elements to the buffer
+void EDE_FixedBufFree(FixedBuffer *fb);                            // Reset the memory in the buffer
+
+#endif //  EDE_MEMORY_H_

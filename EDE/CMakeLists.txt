@@ -29,12 +29,14 @@ set(EDE_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}/src")
 
 set(HEADERS 
 	"${EDE_SRC_DIR}/terminal.h"
+	"${EDE_SRC_DIR}/memory.h"
 	"${EDE_SRC_DIR}/utils.h"
 	"${EDE_SRC_DIR}/input.h"
 )
 
 set(SOURCES 
 	"${EDE_SRC_DIR}/terminal.cpp"
+	"${EDE_SRC_DIR}/memory.cpp"
 	"${EDE_SRC_DIR}/utils.cpp"
 	"${EDE_SRC_DIR}/input.cpp"
 	"${EDE_SRC_DIR}/main.cpp"
