@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include <ctype.h>      // For iscntrl()
+#include <string.h>     // For strlen()
 #include <sys/ioctl.h>  // For ioctl(), winsize, TIOCGWINSZ
 
 // -----------------------------------------------------------------------
@@ -70,35 +71,46 @@ void EDE_TermRefreshScreen() {
     welcome_len = EDE_GetEditorConfig().ScreenCols;
   }
   
+  // Cursor Position Buffer
+  char cursor_buf[32];
+  snprintf(cursor_buf, 
+           sizeof(cursor_buf), 
+           "\x1b[%d;%dH", 
+           EDE_GetEditorConfig().CursorY + 1,                 // Convert to 1-based Index
+           EDE_GetEditorConfig().CursorX + 1);                // Convert to 1-based Index
+  
   // NOTE(Nghia Lam): A fixed buffer to contain all the command lists for refresh
   // the terminal screen, which included:
   //  - 6: Escape sequence <ESC>[?25l - Hide cursor before re-drawing screen
   //  - 3: Escape sequence <ESC>[H    - Re-position cursor to top left corner
   //  - rows * 6: ~<ESC>[K\r\n at the begining of each row, then minus 2 byte of 
   //              \r\n for the last row.
-  //  - size for welcome message when open a blank EDE.
-  //  - 3: Escape sequence <ESC>[H    - Re-position cursor back after drawing
+  //  - Size for welcome message when open a blank EDE.
+  //  - Size for cursor position drawing command.
   //  - 6: Escape sequence <ESC>[?25h - Re-enable cursor after re-drawing screen
-  int buffer_size = 18                                        // Size of all Escape sequence command
+  int buffer_size = 15                                        // Size of all Escape sequence command
     + (EDE_GetEditorConfig().ScreenRows * 6 - 2)              // Size of each line drawing command
     + welcome_len                                             // Welcome message's length
-    + (EDE_GetEditorConfig().ScreenCols - welcome_len) / 2;   // Welcome message's padding (for center)
+    + (EDE_GetEditorConfig().ScreenCols - welcome_len) / 2    // Welcome message's padding (for center)
+    + strlen(cursor_buf);                                     // Cursor position drawing command
   
+  // This fixed buffer will allocate all the memory require for all the command once.
+  // Then we only need to add the character command to it later. This approach will
+  // prevent from dynamic relocate memory again and again during run-time.
   FixedBuffer fb(buffer_size);
   
   // NOTE(Nghia Lam): 
   //   - \x1b: Escape squence (or 27 in decimal) start, follow by [ character
-  EDE_FixedBufAppend(&fb, "\x1b[?25h", 6); // Hide cursor before re-drawing screen
-  EDE_FixedBufAppend(&fb, "\x1b[H", 3);    // Re-position cursor to top left corner
+  EDE_FixedBufAppend(&fb, "\x1b[?25l", 6);                    // Hide cursor before re-drawing screen
+  EDE_FixedBufAppend(&fb, "\x1b[H", 3);                       // Re-position cursor to top left corner
   
   EDE_TermDrawRows(&fb, welcome, welcome_len);
   
-  EDE_FixedBufAppend(&fb, "\x1b[H", 3);    // Re-position cursor back after drawing
-  EDE_FixedBufAppend(&fb, "\x1b[?25h", 6); // Re-enable cursor after re-drawing screen
+  EDE_FixedBufAppend(&fb, cursor_buf, strlen(cursor_buf));    // Positioning Cursor
+  EDE_FixedBufAppend(&fb, "\x1b[?25h", 6);                    // Re-enable cursor after re-drawing screen
   
+  // Write the batch buffer at once
   write(STDOUT_FILENO, fb.Buf, fb.Size);
-  
-  EDE_FixedBufFree(&fb);
 }
 
 void EDE_TermDrawRows(FixedBuffer *fb, const char* welcome_msg, int welcome_len) {

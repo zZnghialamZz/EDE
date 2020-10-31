@@ -36,9 +36,8 @@ struct FixedBuffer {
   int Index;
   char *Buf;
   
-  FixedBuffer(int size) : Size(size), Index(0) {
-    Buf = &Buf[Size];
-  }
+  FixedBuffer(int size) : Size(size), Index(0) { Buf = new char[Size]; }
+  ~FixedBuffer() { delete[] Buf; }
 };
 
 // -----------------------------------------------------------------------
@@ -47,6 +46,5 @@ struct FixedBuffer {
 
 // Fixed Buffers
 void EDE_FixedBufAppend(FixedBuffer *fb, const char *s, int len);  // Append new elements to the buffer
-void EDE_FixedBufFree(FixedBuffer *fb);                            // Reset the memory in the buffer
 
 #endif //  EDE_MEMORY_H_

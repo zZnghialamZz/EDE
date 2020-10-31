@@ -43,8 +43,3 @@ void EDE_FixedBufAppend(FixedBuffer *fb, const char *s, int len) {
   memcpy(&fb->Buf[fb->Index], s, len);
   fb->Index += len;
 }
-
-void EDE_FixedBufFree(FixedBuffer *fb) {
-  fb->Index = 0;
-  memset(fb->Buf, 0, fb->Size);
-}

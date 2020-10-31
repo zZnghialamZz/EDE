@@ -41,6 +41,7 @@
 // Structure and type definition
 // -----------------------------------------------------------------------
 struct EDE_EditorConfig {
+  int CursorX, CursorY;
   int ScreenCols;
   int ScreenRows;
   termios DefaultSettings;    // Default configuration of terminal
@@ -53,6 +54,6 @@ void EDE_InitEditor();                         // Init Editor values when startu
 void EDE_InitSettings();                       // Config the editor when startup
 void EDE_ErrorHandler(const char* s);          // Out the error information
 
-const EDE_EditorConfig& EDE_GetEditorConfig(); // Get the global editor config
+EDE_EditorConfig& EDE_GetEditorConfig();       // Get the global editor config
 
 #endif // EDE_UTILS_H_
