@@ -31,6 +31,25 @@
 #include <string.h>  // For memcpy()
 
 // -----------------------------------------------------------------------
+// Static Helpers
+// -----------------------------------------------------------------------
+void EDE_EditorAppendRow(const char* s, size_t len) {
+  // TODO(Nghia Lam): This method reallocate each line of file, which may cause some
+  // performance issue -> Need more tests and optimization ?
+  EDE().Rows = (EDE_EditorRows*) realloc(EDE().Rows, 
+                                         sizeof(EDE_EditorRows) 
+                                         * (EDE().DisplayRows + 1));
+  
+  int at = EDE().DisplayRows;
+  
+  EDE().Rows[at].Size = len;
+  EDE().Rows[at].Chars = new char[len + 1];
+  memcpy(EDE().Rows[at].Chars, s, len);
+  EDE().Rows[at].Chars[len] = '\0';
+  ++EDE().DisplayRows;
+}
+
+// -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
 void EDE_EditorOpen(const char* file_name) {
@@ -39,19 +58,13 @@ void EDE_EditorOpen(const char* file_name) {
   
   char *line = nullptr;
   size_t linecap = 0;
-  ssize_t linelen = getline(&line, &linecap, fp);
+  ssize_t linelen = 0;
   
-  if (linelen != -1) {
+  while ((linelen = getline(&line, &linecap, fp)) != -1) {
     while(linelen > 0 && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r'))
       --linelen;
-    
-    EDE_GetEditorConfig().Row.Size = linelen;
-    EDE_GetEditorConfig().Row.Chars = new char[linelen + 1];
-    memcpy(EDE_GetEditorConfig().Row.Chars, line, linelen);
-    EDE_GetEditorConfig().Row.Chars[linelen] = '\0';
-    EDE_GetEditorConfig().DisplayRows = 1;
+    EDE_EditorAppendRow(line, linelen);
   }
-  
   free(line);
   fclose(fp);
 }

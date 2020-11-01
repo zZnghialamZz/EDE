@@ -87,9 +87,12 @@ static void EnableRawMode() {
 // -----------------------------------------------------------------------
 void EDE_InitEditor() {
   // TODO(Nghia Lam): Checking whether we are using GUI or Terminal mode here
-  E.CursorX = 0;
-  E.CursorY = 0;
+  E.CursorX     = 0;
+  E.CursorY     = 0;
+  E.RowOffset   = 0;
+  E.ColOffset   = 0;
   E.DisplayRows = 0;
+  E.Rows        = nullptr;
   
   if (EDE_TermGetSize(&E.ScreenCols, &E.ScreenRows) == -1)
     EDE_ErrorHandler("EDE_TermGetSize");
@@ -108,4 +111,4 @@ void EDE_ErrorHandler(const char* s) {
   exit(1);
 }
 
-EDE_EditorConfig& EDE_GetEditorConfig() { return E; }
+EDE_EditorConfig& EDE() { return E; }

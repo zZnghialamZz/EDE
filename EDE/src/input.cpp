@@ -123,18 +123,18 @@ void EDE_ProcessKeyPressed() {
     
     case PAGE_UP:
     case PAGE_DOWN: {
-      int times = EDE_GetEditorConfig().ScreenRows;
+      int times = EDE().ScreenRows;
       while (--times)
         EDE_EditorMoveCursor(c == PAGE_UP ? KEY_UP : KEY_DOWN);
       break;
     }
     
     case KEY_HOME: {
-      EDE_GetEditorConfig().CursorX = 0;
+      EDE().CursorX = 0;
       break;
     }
     case KEY_END: {
-      EDE_GetEditorConfig().CursorX = EDE_GetEditorConfig().ScreenCols - 1;
+      EDE().CursorX = EDE().ScreenCols - 1;
       break;
     }
     

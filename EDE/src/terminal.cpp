@@ -57,31 +57,49 @@ int EDE_TermGetCursorPosition(int *cols, int *rows) {
   return 0;
 }
 
+void EDE_TermScreenScroll() {
+  if (EDE().CursorY < EDE().RowOffset)
+    EDE().RowOffset = EDE().CursorY;
+  if (EDE().CursorY >= 
+      EDE().RowOffset + EDE().ScreenRows)
+    EDE().RowOffset = EDE().CursorY - EDE().ScreenRows + 1;
+  if (EDE().CursorX < EDE().ColOffset)
+    EDE().ColOffset = EDE().CursorX;
+  if (EDE().CursorX >= 
+      EDE().ColOffset + EDE().ScreenCols)
+    EDE().ColOffset = EDE().CursorX - EDE().ScreenCols + 1;
+}
+
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
 void EDE_TermRefreshScreen() {
+  EDE_TermScreenScroll();
+  
   // Init welcome message
   char welcome[80];
   int welcome_len = snprintf(welcome, 
                              sizeof(welcome), 
                              "Ethan Development Editor -- Version %s", 
                              EDE_VERSION);
-  if (welcome_len > EDE_GetEditorConfig().ScreenCols) {
-    welcome_len = EDE_GetEditorConfig().ScreenCols;
+  if (welcome_len > EDE().ScreenCols) {
+    welcome_len = EDE().ScreenCols;
   }
   
   // Cursor Position Buffer
-  char cursor_buf[16];
+  char cursor_buf[32];
   snprintf(cursor_buf, 
            sizeof(cursor_buf), 
            "\x1b[%d;%dH", 
-           EDE_GetEditorConfig().CursorY + 1,                 // Convert to 1-based Index
-           EDE_GetEditorConfig().CursorX + 1);                // Convert to 1-based Index
+           EDE().CursorY - EDE().RowOffset + 1,  // Convert to 1-based Index
+           EDE().CursorX - EDE().ColOffset + 1); // Convert to 1-based Index
   
   // Input Drawing Buffer
-  int input_buf = (EDE_GetEditorConfig().Row.Size > EDE_GetEditorConfig().ScreenRows) 
-    ? EDE_GetEditorConfig().ScreenRows : EDE_GetEditorConfig().Row.Size;
+  int input_buf = 0;
+  for(int i = 0; i < EDE().DisplayRows; ++i) {
+    input_buf += (EDE().Rows[i].Size > EDE().ScreenCols) 
+      ? EDE().ScreenCols : EDE().Rows[i].Size;
+  }
   
   // NOTE(Nghia Lam): A fixed buffer to contain all the command lists for refresh
   // the terminal screen, which included:
@@ -94,9 +112,9 @@ void EDE_TermRefreshScreen() {
   //  - Size for text input drawing command
   //  - 6: Escape sequence <ESC>[?25h - Re-enable cursor after re-drawing screen
   int buffer_size = 15                                        // Size of all Escape sequence command
-    + (EDE_GetEditorConfig().ScreenRows * 6 - 2)              // Size of each line drawing command
+    + (EDE().ScreenRows * 6 - 2)              // Size of each line drawing command
     + welcome_len                                             // Welcome message's length
-    + (EDE_GetEditorConfig().ScreenCols - welcome_len) / 2    // Welcome message's padding (for center)
+    + (EDE().ScreenCols - welcome_len) / 2    // Welcome message's padding (for center)
     + strlen(cursor_buf)                                      // Cursor position drawing command
     + input_buf;                                              // Input drawing command
   
@@ -120,11 +138,12 @@ void EDE_TermRefreshScreen() {
 }
 
 void EDE_TermDrawRows(FixedBuffer *fb, const char* welcome_msg, int welcome_len) {
-  for (int y = 0; y < EDE_GetEditorConfig().ScreenRows; ++y) {
-    if (y >= EDE_GetEditorConfig().DisplayRows) {
-      if (EDE_GetEditorConfig().DisplayRows == 0 && y == EDE_GetEditorConfig().ScreenRows / 3) {
+  for (int y = 0; y < EDE().ScreenRows; ++y) {
+    int file_row = y + EDE().RowOffset;
+    if (file_row >= EDE().DisplayRows) {
+      if (EDE().DisplayRows == 0 && y == EDE().ScreenRows / 3) {
         // Center welcome message
-        int padding = (EDE_GetEditorConfig().ScreenCols - welcome_len) / 2;
+        int padding = (EDE().ScreenCols - welcome_len) / 2;
         if (padding) {
           EDE_FixedBufAppend(fb, "~", 1);
           --padding;
@@ -139,14 +158,17 @@ void EDE_TermDrawRows(FixedBuffer *fb, const char* welcome_msg, int welcome_len)
       }
       
     } else {
-      int len = EDE_GetEditorConfig().Row.Size;
-      if (len > EDE_GetEditorConfig().ScreenRows)
-        len = EDE_GetEditorConfig().ScreenRows;
-      EDE_FixedBufAppend(fb, EDE_GetEditorConfig().Row.Chars, len);
+      int len = EDE().Rows[file_row].Size - EDE().ColOffset;
+      if (len < 0) len = 0;
+      if (len > EDE().ScreenCols)
+        len = EDE().ScreenCols;
+      EDE_FixedBufAppend(fb, 
+                         &EDE().Rows[file_row].Chars[EDE().ColOffset], 
+                         len);
     }
     
     EDE_FixedBufAppend(fb, "\x1b[K", 3);  // Clear the line
-    if (y < EDE_GetEditorConfig().ScreenRows -1)
+    if (y < EDE().ScreenRows -1)
       EDE_FixedBufAppend(fb, "\r\n", 2);
   }
 }

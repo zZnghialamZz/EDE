@@ -33,26 +33,48 @@
 // Main APIs
 // -----------------------------------------------------------------------
 void EDE_EditorMoveCursor(const int key) {
+  // Query the current row
+  EDE_EditorRows* row = (EDE().CursorY >= EDE().DisplayRows) ? nullptr : &EDE().Rows[EDE().CursorY];
+  
   switch(key) {
     case KEY_UP: {
-      if (EDE_GetEditorConfig().CursorY != 0)
-        --EDE_GetEditorConfig().CursorY;
+      if (EDE().CursorY != 0)
+        --EDE().CursorY;
       break;
     }
     case KEY_DOWN: {
-      if (EDE_GetEditorConfig().CursorY != EDE_GetEditorConfig().ScreenRows - 1)
-        ++EDE_GetEditorConfig().CursorY;
+      if (EDE().CursorY < EDE().DisplayRows)
+        ++EDE().CursorY;
       break;
     }
     case KEY_LEFT: {
-      if (EDE_GetEditorConfig().CursorX != 0)
-        --EDE_GetEditorConfig().CursorX;
+      if (EDE().CursorX != 0) {
+        --EDE().CursorX;
+      } else if (EDE().CursorY > 0) {
+        // Move to the end of the previous line
+        --EDE().CursorY;
+        EDE().CursorX = EDE().Rows[EDE().CursorY].Size;
+      }
       break;
     }
     case KEY_RIGHT: {
-      if (EDE_GetEditorConfig().CursorX != EDE_GetEditorConfig().ScreenCols - 1)
-        ++EDE_GetEditorConfig().CursorX;
+      if (row && EDE().CursorX < row->Size) {
+        ++EDE().CursorX;
+      } else if (row && EDE().CursorX == row->Size) {
+        // Move to the begining of the next line
+        ++EDE().CursorY;
+        EDE().CursorX = 0;
+      }
       break;
     }
   }
+  
+  // Re-query the row for snapping cursor position
+  //   - Only allow the cursor the position at the very end of texts 
+  //     in current line
+  row = (EDE().CursorY >= EDE().DisplayRows) ? nullptr : &EDE().Rows[EDE().CursorY];
+  int row_len = row ? row->Size : 0;
+  if (EDE().CursorX > row_len)
+    EDE().CursorX = row_len;
+  
 }

@@ -47,10 +47,12 @@ struct EDE_EditorRows {
 
 struct EDE_EditorConfig {
   int CursorX, CursorY;
+  int RowOffset;
+  int ColOffset;
   int ScreenCols;
   int ScreenRows;
   int DisplayRows;
-  EDE_EditorRows Row;
+  EDE_EditorRows* Rows;
   termios DefaultSettings;    // Default configuration of terminal
 };
 
@@ -61,6 +63,6 @@ void EDE_InitEditor();                         // Init Editor values when startu
 void EDE_InitSettings();                       // Config the editor when startup
 void EDE_ErrorHandler(const char* s);          // Out the error information
 
-EDE_EditorConfig& EDE_GetEditorConfig();       // Get the global editor config
+EDE_EditorConfig& EDE();                       // Get the global editor config
 
 #endif // EDE_UTILS_H_
