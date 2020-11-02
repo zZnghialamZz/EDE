@@ -123,6 +123,15 @@ void EDE_ProcessKeyPressed() {
     
     case PAGE_UP:
     case PAGE_DOWN: {
+      // Make PAGE_UP, PAGE_DOWN scrolling
+      if (c == PAGE_UP) {
+        EDE().CursorY = EDE().RowOffset;
+      } else if (c == PAGE_DOWN) {
+        EDE().CursorY = EDE().RowOffset + EDE().ScreenRows - 1;
+        if (EDE().CursorY > EDE().DisplayRows) 
+          EDE().CursorY = EDE().DisplayRows;
+      }
+      
       int times = EDE().ScreenRows;
       while (--times)
         EDE_EditorMoveCursor(c == PAGE_UP ? KEY_UP : KEY_DOWN);
@@ -134,7 +143,8 @@ void EDE_ProcessKeyPressed() {
       break;
     }
     case KEY_END: {
-      EDE().CursorX = EDE().ScreenCols - 1;
+      if (EDE().CursorY < EDE().DisplayRows)
+        EDE().CursorX = EDE().Rows[EDE().CursorY].Size;
       break;
     }
     

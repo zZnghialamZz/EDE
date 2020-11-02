@@ -33,10 +33,15 @@
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
-void EDE_TermRefreshScreen();                   // Refresh the terminal screen.
-void EDE_TermDrawRows(FixedBuffer *fb, 
-                      const char* welcome_msg, 
-                      int welcome_len);         // Drawing the rows primitives.
-int  EDE_TermGetSize(int *cols, int * rows);    // Get the size of the terminal.
+void EDE_TermRefreshScreen();                         // Refresh the terminal screen.
+int  EDE_TermGetSize(int *cols, int * rows);          // Get the size of the terminal.
+
+void EDE_TermSetStatusMessage(const char* msg, ...);  // Set the message to the status line
+
+// Render
+// ---
+void EDE_TermDrawMessageBar(FixedBuffer *fb, int message_len);                     // Drawing the message bar below the status bar.
+void EDE_TermDrawStatusBar(FixedBuffer *fb, const char* status, int status_len);   // Drawing the status bar at the end line of terminal screen.
+void EDE_TermDrawRows(FixedBuffer *fb, const char* welcome_msg, int welcome_len);  // Drawing the rows primitives.
 
 #endif // EDE_TERMINAL_H_

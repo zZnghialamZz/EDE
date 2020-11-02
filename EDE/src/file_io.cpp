@@ -82,6 +82,9 @@ void EDE_EditorAppendRow(const char* s, size_t len) {
 // Main APIs
 // -----------------------------------------------------------------------
 void EDE_EditorOpen(const char* file_name) {
+  delete[] EDE().FileName;
+  EDE().FileName = strdup(file_name);
+  
   FILE *fp = fopen(file_name, "r");
   if (!fp) EDE_ErrorHandler("fopen");
   

@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include <ctype.h>      // For iscntrl()
+#include <stdarg.h>     // For va_list(), va_start(), va_end()
 #include <string.h>     // For strlen(), memset()
 #include <sys/ioctl.h>  // For ioctl(), winsize, TIOCGWINSZ
 
@@ -76,16 +77,30 @@ void EDE_TermScreenScroll() {
 void EDE_TermRefreshScreen() {
   EDE_TermScreenScroll();
   
+  // Calculate buffer size of all drawing command
+  // TODO(Nghia Lam): Maybe we can abstract this part to another function
+  // ---
   // Init welcome message
   char welcome[80];
   int welcome_len = snprintf(welcome, 
                              sizeof(welcome), 
                              "Ethan Development Editor -- Version %s", 
                              EDE_VERSION);
-  if (welcome_len > EDE().ScreenCols) {
+  if (welcome_len > EDE().ScreenCols) 
     welcome_len = EDE().ScreenCols;
-  }
-  
+  // Init status bar
+  char status[80];
+  int status_len = snprintf(status, 
+                            sizeof(status), 
+                            " %.20s - %d/%d lines", 
+                            EDE().FileName ? EDE().FileName : "[No name]", 
+                            EDE().CursorY + 1,
+                            EDE().DisplayRows);
+  if (status_len > EDE().ScreenCols) 
+    status_len = EDE().ScreenCols;
+  // Init message bar
+  int message_len = (strlen(EDE().StatusMsg) > EDE().ScreenCols) 
+    ? EDE().ScreenCols : strlen(EDE().StatusMsg);
   // Cursor Position Buffer
   char cursor_buf[32];
   snprintf(cursor_buf, 
@@ -93,7 +108,6 @@ void EDE_TermRefreshScreen() {
            "\x1b[%d;%dH", 
            EDE().CursorY - EDE().RowOffset + 1,  // Convert to 1-based Index
            EDE().CursorX - EDE().ColOffset + 1); // Convert to 1-based Index
-  
   // Input Drawing Buffer
   int input_buf = 0;
   for(int i = 0; i < EDE().DisplayRows; ++i) {
@@ -103,20 +117,23 @@ void EDE_TermRefreshScreen() {
   
   // NOTE(Nghia Lam): A fixed buffer to contain all the command lists for refresh
   // the terminal screen, which included:
-  //  - 6: Escape sequence <ESC>[?25l - Hide cursor before re-drawing screen
-  //  - 3: Escape sequence <ESC>[H    - Re-position cursor to top left corner
-  //  - rows * 6: ~<ESC>[K\r\n at the begining of each row, then minus 2 byte of 
-  //              \r\n for the last row.
-  //  - Size for welcome message when open a blank EDE.
-  //  - Size for cursor position drawing command.
-  //  - Size for text input drawing command
-  //  - 6: Escape sequence <ESC>[?25h - Re-enable cursor after re-drawing screen
-  int buffer_size = 15                                        // Size of all Escape sequence command
-    + (EDE().ScreenRows * 6 - 2)              // Size of each line drawing command
-    + welcome_len                                             // Welcome message's length
+  //  - 6: Escape sequence <ESC>[?25l - Hide cursor before re-drawing screen     -
+  //  - 3: Escape sequence <ESC>[H    - Re-position cursor to top left corner     |-> 15 bytes
+  //  - 6: Escape sequence <ESC>[?25h - Re-enable cursor after re-drawing screen -
+  //  - rows * 6: ~<ESC>[K\r\n at the begining of each row.
+  //  - welcome_len: Size for welcome message when open a blank EDE.
+  //  - cursor_buf:  Size for cursor position drawing command.
+  //  - input_buf:   Size for text input drawing command
+  //  - status_len:  Size for drawing status bar. Please see EDE_TermDrawStatusBar() for more details.
+  //  - message_len: Size for drawing message bar. Please see EDE_TermDrawMessageBar() for more details.
+  int buffer_size = 15                        // Size of all Escape sequence command
+    + (EDE().ScreenRows * 6)                  // Size of each line drawing command
+    + welcome_len                             // Welcome message's length
     + (EDE().ScreenCols - welcome_len) / 2    // Welcome message's padding (for center)
-    + strlen(cursor_buf)                                      // Cursor position drawing command
-    + input_buf;                                              // Input drawing command
+    + strlen(cursor_buf)                      // Cursor position drawing command
+    + input_buf                               // Input drawing command
+    + status_len + EDE().ScreenCols + 9       // Status Bar drawing command
+    + message_len + 3;                        // Message Bar drawing command
   
   // This fixed buffer will allocate all the memory require for all the command once.
   // Then we only need to add the character command to it later. This approach will
@@ -129,6 +146,8 @@ void EDE_TermRefreshScreen() {
   EDE_FixedBufAppend(&fb, "\x1b[H", 3);                       // Re-position cursor to top left corner
   
   EDE_TermDrawRows(&fb, welcome, welcome_len);
+  EDE_TermDrawStatusBar(&fb, status, status_len);
+  EDE_TermDrawMessageBar(&fb, message_len);
   
   EDE_FixedBufAppend(&fb, cursor_buf, strlen(cursor_buf));    // Positioning Cursor
   EDE_FixedBufAppend(&fb, "\x1b[?25h", 6);                    // Re-enable cursor after re-drawing screen
@@ -136,6 +155,34 @@ void EDE_TermRefreshScreen() {
   // Write the batch buffer at once
   write(STDOUT_FILENO, fb.Buf, fb.Size);
 }
+
+int EDE_TermGetSize(int *cols, int * rows) {
+  winsize ws;
+  // NOTE(Nghia Lam): Since ioctl() wont always give us the right number from 
+  // every terminal, so we will provide some fallback here.
+  // The idea is to position the cursor at the bottom right of the terminal 
+  // screen, then query the columns and rows based on the the cursor's pos.
+  if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
+    if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) 
+      return -1;
+    return EDE_TermGetCursorPosition(cols, rows);
+  } else {
+    *cols = ws.ws_col;
+    *rows = ws.ws_row;
+    return 0;
+  }
+}
+
+void EDE_TermSetStatusMessage(const char* msg, ...) {
+  va_list ap;
+  va_start(ap, msg);
+  vsnprintf(EDE().StatusMsg, sizeof(EDE().StatusMsg), msg, ap);
+  va_end(ap);
+  EDE().StatusTime = time(NULL); // Got the current time
+}
+
+// Render
+// ---
 
 void EDE_TermDrawRows(FixedBuffer *fb, const char* welcome_msg, int welcome_len) {
   for (int y = 0; y < EDE().ScreenRows; ++y) {
@@ -168,24 +215,31 @@ void EDE_TermDrawRows(FixedBuffer *fb, const char* welcome_msg, int welcome_len)
     }
     
     EDE_FixedBufAppend(fb, "\x1b[K", 3);  // Clear the line
-    if (y < EDE().ScreenRows -1)
-      EDE_FixedBufAppend(fb, "\r\n", 2);
+    EDE_FixedBufAppend(fb, "\r\n", 2);    // Go to the new line
   }
 }
 
-int EDE_TermGetSize(int *cols, int * rows) {
-  winsize ws;
-  // NOTE(Nghia Lam): Since ioctl() wont always give us the right number from 
-  // every terminal, so we will provide some fallback here.
-  // The idea is to position the cursor at the bottom right of the terminal 
-  // screen, then query the columns and rows based on the the cursor's pos.
-  if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
-    if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) 
-      return -1;
-    return EDE_TermGetCursorPosition(cols, rows);
-  } else {
-    *cols = ws.ws_col;
-    *rows = ws.ws_row;
-    return 0;
+// NOTE(Nghia Lam): 
+//   - Escape sequence <Esc>[7m: Invert drawing color to use black as text color,
+// white as background color.
+//   - Escape sequence <Esc>[m: Invert back to normal drawing color.
+void EDE_TermDrawStatusBar(FixedBuffer *fb, const char* status, int status_len) {
+  EDE_FixedBufAppend(fb, "\x1b[7m", 4); // Invert drawing color to use black as text color, white as background color.
+  EDE_FixedBufAppend(fb, status, status_len);
+  
+  while (status_len < EDE().ScreenCols) {
+    EDE_FixedBufAppend(fb, " ", 1); 
+    ++status_len;
   }
+  
+  EDE_FixedBufAppend(fb, "\x1b[m", 3);  // Revert back to normal drawing color.
+  EDE_FixedBufAppend(fb, "\r\n", 2);    // Status line.
+}
+
+// NOTE(Nghia Lam): 
+//   - Escape sequence <Esc>[K: Clear the message bar
+void EDE_TermDrawMessageBar(FixedBuffer *fb, int message_len) {
+  EDE_FixedBufAppend(fb, "\x1b[K", 3);  // Clear the message bar.
+  if (message_len && (time(NULL) - EDE().StatusTime) < 5) // Draw the message only 5 seconds
+    EDE_FixedBufAppend(fb, EDE().StatusMsg, message_len);
 }

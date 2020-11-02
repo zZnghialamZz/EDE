@@ -35,7 +35,8 @@
 #include <termios.h>    // For termios, tcgetattr(), tcgetattr(), ECHO, TCSAFLUSH
 #include <unistd.h>     // For read(), STDIN_FILENO
 #include <stdlib.h>     // For atexit();
-#include <stdio.h>      // for printf(), perror(), fopen(), getline(), FILE
+#include <stdio.h>      // For printf(), vsnprint(), perror(), fopen(), getline(), FILE
+#include <time.h>       // For time_t
 
 // -----------------------------------------------------------------------
 // Structure and type definition
@@ -54,6 +55,9 @@ struct EDE_EditorConfig {
   int ScreenCols;
   int ScreenRows;
   int DisplayRows;
+  char* FileName;
+  char StatusMsg[80];
+  time_t StatusTime;
   EDE_EditorRows* Rows;
   termios DefaultSettings;    // Default configuration of terminal
 };
