@@ -42,7 +42,9 @@
 // -----------------------------------------------------------------------
 struct EDE_EditorRows {
   int Size;
+  int RSize;
   char* Chars;
+  char* Render;
 };
 
 struct EDE_EditorConfig {

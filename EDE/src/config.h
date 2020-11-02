@@ -28,6 +28,12 @@
 #ifndef EDE_CONFIG_H_
 #define EDE_CONFIG_H_
 
-#define EDE_VERSION   "0.0.1"
+#define EDE_VERSION    "0.0.1"
+
+// -----------------------------------------------------------------------
+// Main Editor Configurations
+// -----------------------------------------------------------------------
+#define EDE_TAB_WIDTH  4
+
 
 #endif //  EDE_CONFIG_H_

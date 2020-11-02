@@ -27,18 +27,42 @@
 
 #include "file_io.h"
 #include "utils.h"
+#include "config.h"
 
 #include <string.h>  // For memcpy()
 
 // -----------------------------------------------------------------------
 // Static Helpers
 // -----------------------------------------------------------------------
+void EDE_EditorUpdateRow(EDE_EditorRows* row) {
+  int tabs = 0;
+  for (int i = 0; i < row->Size; ++i)
+    if (row->Chars[i] == '\t') ++tabs;
+  
+  // Cleanup previouse row
+  delete[] row->Render;
+  row->Render = new char[row->Size + tabs * EDE_TAB_WIDTH + 1];
+  
+  int idx = 0;
+  for (int i = 0; i < row->Size; ++i) {
+    if (row->Chars[i] == '\t') {
+      // NOTE(Nghia Lam): Currently we only support render space for tabs
+      row->Render[idx++] = ' ';
+      while (idx % EDE_TAB_WIDTH != 0)
+        row->Render[idx++] = ' ';
+    } else {
+      row->Render[idx++] = row->Chars[i];
+    }
+  }
+  row->Render[idx] = '\0';
+  row->RSize = idx;
+}
+
 void EDE_EditorAppendRow(const char* s, size_t len) {
   // TODO(Nghia Lam): This method reallocate each line of file, which may cause some
   // performance issue -> Need more tests and optimization ?
   EDE().Rows = (EDE_EditorRows*) realloc(EDE().Rows, 
-                                         sizeof(EDE_EditorRows) 
-                                         * (EDE().DisplayRows + 1));
+                                         sizeof(EDE_EditorRows) * (EDE().DisplayRows + 1));
   
   int at = EDE().DisplayRows;
   
@@ -46,6 +70,11 @@ void EDE_EditorAppendRow(const char* s, size_t len) {
   EDE().Rows[at].Chars = new char[len + 1];
   memcpy(EDE().Rows[at].Chars, s, len);
   EDE().Rows[at].Chars[len] = '\0';
+  
+  EDE().Rows[at].RSize = 0;
+  EDE().Rows[at].Render = nullptr;
+  EDE_EditorUpdateRow(&EDE().Rows[at]);
+  
   ++EDE().DisplayRows;
 }
 

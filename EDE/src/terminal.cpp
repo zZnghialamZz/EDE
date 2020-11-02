@@ -158,12 +158,12 @@ void EDE_TermDrawRows(FixedBuffer *fb, const char* welcome_msg, int welcome_len)
       }
       
     } else {
-      int len = EDE().Rows[file_row].Size - EDE().ColOffset;
+      int len = EDE().Rows[file_row].RSize - EDE().ColOffset;
       if (len < 0) len = 0;
       if (len > EDE().ScreenCols)
         len = EDE().ScreenCols;
       EDE_FixedBufAppend(fb, 
-                         &EDE().Rows[file_row].Chars[EDE().ColOffset], 
+                         &EDE().Rows[file_row].Render[EDE().ColOffset], 
                          len);
     }
     
