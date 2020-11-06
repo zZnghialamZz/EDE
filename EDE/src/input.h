@@ -34,6 +34,7 @@
 // Type Definition & Structure
 // -----------------------------------------------------------------------
 enum EditorKey {
+  BACKSPACE = 127,
   KEY_LEFT  = 1000,   // For not overlaping with input key
   KEY_UP    ,
   KEY_RIGHT ,

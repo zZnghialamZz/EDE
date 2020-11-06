@@ -28,9 +28,24 @@
 #ifndef EDE_COMMAND_H_
 #define EDE_COMMAND_H_
 
+#include "utils.h"
+
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
-void EDE_EditorMoveCursor(const int key);   // Move the cursor in the screen
+
+// Cursor Commands
+// ---
+void EDE_EditorMoveCursor(const int key);                          // Move the cursor in the screen
+
+// Edit Chars Commands
+// ---
+void EDE_EditorInsertChar(int c);                                  // Insert the require char to the current row.
+
+// Rows Low Level API
+// ---
+void EDE_EditorUpdateRow(EDE_EditorRows* row);                     // Update render status for the row
+void EDE_EditorAppendRow(const char* s, size_t len);               // Append line of text into rows memory
+void EDE_EditorRowInsertChar(EDE_EditorRows* row, int at, int c);  // Insert character at a specific position in a row
 
 #endif //  EDE_COMMAND_H_

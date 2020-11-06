@@ -25,17 +25,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// -----------------------------------------------------------------------
 // NOTE(Nghia Lam): This program is currently follow the instruction of:
 //          
 //            https://viewsourcecode.org/snaptoken/kilo/
 //
 // The tutorial is implemented in C, but the goal is a fast, robust modern
 // text editor which is written in C++17
-// Here is a long todo list:
+// Here is a todo list:
 // ---
 // TODO(Nghia Lam): Walk through the tutorial of kilo.
 // TODO(Nghia Lam): Re-create it in C++17 with data oriented mindset.
 // TODO(Nghia Lam): Support both terminal mode and graphical mode.
+// TODO(Nghia Lam): Multiple file support
+// -----------------------------------------------------------------------
 
 // Feature tests macros for getline()
 #define _DEFAULT_SOURCE

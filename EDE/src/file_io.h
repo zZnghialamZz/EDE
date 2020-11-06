@@ -31,6 +31,8 @@
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
-void EDE_EditorOpen(const char* file_name); // Open and reading a file from disk
+char* EDE_EditorRowsToString(int *buffer_size); // Convert all rows to string for saving.  
+void  EDE_EditorOpen(const char* file_name);    // Open and reading a file from disk.
+void  EDE_EditorSave();                         // Save the dirty file to the disk.
 
 #endif //  EDE_FILE_IO_H_

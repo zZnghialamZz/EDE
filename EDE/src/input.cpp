@@ -103,6 +103,7 @@ void EDE_ProcessKeyPressed() {
   int c = EDE_ReadKey();
   switch (c) {
     // Quit: Ctrl-Q
+    // ---
     case CTRL_KEY('q'): {
       // Clear screen when exit
       write(STDOUT_FILENO, "\x1b[2J", 4);
@@ -112,7 +113,31 @@ void EDE_ProcessKeyPressed() {
       break;
     }
     
+    // Primitives
+    // ---
+    case '\r': {
+      // TODO(Nghia Lam): Handle this key
+      break;
+    }
+    
+    // NOTE(Nghia Lam): Originally, the Ctrl-H combo would return the control code 8,
+    // which is similar to the backspace control code in some old terminal.
+    // -> We might dont want it to be like this.
+    case CTRL_KEY('h'):
+    case BACKSPACE:
+    case KEY_DEL: {
+      // TODO(Nghia Lam): Handle this key
+      break;
+    }
+    
+    case CTRL_KEY('l'):
+    case '\x1b': {
+      // TODO(Nghia Lam): Handle this key
+      break;
+    }
+    
     // Cursor Movement
+    // ---
     case KEY_UP:
     case KEY_DOWN:
     case KEY_RIGHT:
@@ -148,5 +173,11 @@ void EDE_ProcessKeyPressed() {
       break;
     }
     
+    // Input char
+    // ---
+    default: {
+      EDE_EditorInsertChar(c);
+      break;
+    }
   }
 }

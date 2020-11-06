@@ -26,70 +26,42 @@
 // limitations under the License.
 
 #include "file_io.h"
-#include "utils.h"
-#include "config.h"
+#include "command.h"
 
 #include <string.h>  // For memcpy()
-
-// -----------------------------------------------------------------------
-// Static Helpers
-// -----------------------------------------------------------------------
-void EDE_EditorUpdateRow(EDE_EditorRows* row) {
-  int tabs = 0;
-  for (int i = 0; i < row->Size; ++i)
-    if (row->Chars[i] == '\t') ++tabs;
-  
-  // Cleanup previouse row
-  delete[] row->Render;
-  row->Render = new char[row->Size + tabs * EDE_TAB_WIDTH + 1];
-  
-  int idx = 0;
-  for (int i = 0; i < row->Size; ++i) {
-    if (row->Chars[i] == '\t') {
-      // NOTE(Nghia Lam): Currently we only support render space for tabs
-      row->Render[idx++] = ' ';
-      while (idx % EDE_TAB_WIDTH != 0)
-        row->Render[idx++] = ' ';
-    } else {
-      row->Render[idx++] = row->Chars[i];
-    }
-  }
-  row->Render[idx] = '\0';
-  row->RSize = idx;
-}
-
-void EDE_EditorAppendRow(const char* s, size_t len) {
-  // TODO(Nghia Lam): This method reallocate each line of file, which may cause some
-  // performance issue -> Need more tests and optimization ?
-  EDE().Rows = (EDE_EditorRows*) realloc(EDE().Rows, 
-                                         sizeof(EDE_EditorRows) * (EDE().DisplayRows + 1));
-  
-  int at = EDE().DisplayRows;
-  
-  EDE().Rows[at].Size = len;
-  EDE().Rows[at].Chars = new char[len + 1];
-  memcpy(EDE().Rows[at].Chars, s, len);
-  EDE().Rows[at].Chars[len] = '\0';
-  
-  EDE().Rows[at].RSize = 0;
-  EDE().Rows[at].Render = nullptr;
-  EDE_EditorUpdateRow(&EDE().Rows[at]);
-  
-  ++EDE().DisplayRows;
-}
+#include <fcntl.h>   // For open(), O_RDWR, O_CREAT
+#include <unistd.h>  // For ftruncate(), close()
 
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
+char* EDE_EditorRowsToString(int *buffer_size) {
+  int total_size = 0;
+  for (int i = 0; i < EDE().DisplayRows; ++i) 
+    total_size += EDE().Rows[i].Size + 1;   // Add 1 byte for the new line character
+  *buffer_size = total_size;
+  
+  char* buf    = new char[total_size];
+  char* travel = buf;
+  for (int i = 0; i < EDE().DisplayRows; ++i) {
+    memcpy(travel, EDE().Rows[i].Chars, EDE().Rows[i].Size);
+    travel += EDE().Rows[i].Size;
+    *travel = '\n';
+    ++travel;
+  }
+  
+  return buf; // We return the allocate chars here, expect the use to call delete[] afterward.
+}
+
 void EDE_EditorOpen(const char* file_name) {
-  delete[] EDE().FileName;
+  delete[] EDE().FileName; // Clean up current open file
   EDE().FileName = strdup(file_name);
   
   FILE *fp = fopen(file_name, "r");
   if (!fp) EDE_ErrorHandler("fopen");
   
-  char *line = nullptr;
-  size_t linecap = 0;
+  char *line      = nullptr;
+  size_t linecap  = 0;
   ssize_t linelen = 0;
   
   while ((linelen = getline(&line, &linecap, fp)) != -1) {
@@ -99,4 +71,26 @@ void EDE_EditorOpen(const char* file_name) {
   }
   free(line);
   fclose(fp);
+}
+
+void EDE_EditorSave() {
+  if (EDE().FileName == nullptr) return;
+  
+  int bufsize = 0;
+  char* buf = EDE_EditorRowsToString(&bufsize);
+  
+  // NOTE(Nghia Lam): 
+  //   - O_RDWR  : Open for reading & writing.
+  //   - O_CREAT : Create a new file if it doesnt exist.
+  //   - 0644    : The code permission for reading and writing text file.
+  //   - ftruncate(): Set the file size to the specific number. It will cut off
+  //                  the data if the file is shorter or add 0 to the end if the 
+  //                  file is longer.
+  int fd = open(EDE().FileName, O_RDWR | O_CREAT, 0644);
+  ftruncate(fd, bufsize); 
+  write(fd, buf, bufsize);
+  close(fd);
+  
+  // Clean up
+  delete[] buf;
 }
