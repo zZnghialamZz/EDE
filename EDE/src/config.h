@@ -34,6 +34,6 @@
 // Main Editor Configurations
 // -----------------------------------------------------------------------
 #define EDE_TAB_WIDTH  4
-
+#define EDE_QUIT_TIME  3
 
 #endif //  EDE_CONFIG_H_

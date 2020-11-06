@@ -94,6 +94,7 @@ void EDE_InitEditor() {
   E.DisplayRows  = 0;
   E.StatusTime   = 0;
   E.StatusMsg[0] = '\0';
+  E.IsDirty      = false;
   E.Rows         = nullptr;
   E.FileName     = nullptr;
   

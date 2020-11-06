@@ -104,6 +104,8 @@ void EDE_EditorRowInsertChar(EDE_EditorRows* row, int at, int c) {
   ++row->Size;
   row->Chars[at] = c;
   EDE_EditorUpdateRow(row);
+  
+  EDE().IsDirty = true;
 }
 
 void EDE_EditorUpdateRow(EDE_EditorRows* row) {
@@ -148,4 +150,6 @@ void EDE_EditorAppendRow(const char* s, size_t len) {
   EDE_EditorUpdateRow(&EDE().Rows[at]);
   
   ++EDE().DisplayRows;
+  
+  EDE().IsDirty = true;
 }

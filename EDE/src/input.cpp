@@ -26,8 +26,10 @@
 // limitations under the License.
 
 #include "input.h"
-#include "utils.h"
+#include "config.h"
 #include "command.h"
+#include "file_io.h"
+#include "terminal.h"
 
 #include <errno.h> // for errno, EAGAIN
 
@@ -100,15 +102,24 @@ int EDE_ReadKey() {
 
 // NOTE(Nghia Lam): Currently using vi-binding for this editor
 void EDE_ProcessKeyPressed() {
+  static int quit_times = EDE_QUIT_TIME;
+  
   int c = EDE_ReadKey();
   switch (c) {
     // Quit: Ctrl-Q
     // ---
     case CTRL_KEY('q'): {
+      if (EDE().IsDirty && quit_times > 0) {
+        EDE_TermSetStatusMessage("Warning!! File has unsaved changes. "
+                                 "Press Ctrl-Q %d more times to quit.",
+                                 quit_times);
+        quit_times--;
+        return;
+      }
+      
       // Clear screen when exit
       write(STDOUT_FILENO, "\x1b[2J", 4);
       write(STDOUT_FILENO, "\x1b[H", 3);
-      
       exit(0);
       break;
     }
@@ -133,6 +144,13 @@ void EDE_ProcessKeyPressed() {
     case CTRL_KEY('l'):
     case '\x1b': {
       // TODO(Nghia Lam): Handle this key
+      break;
+    }
+    
+    // File IO
+    // ---
+    case CTRL_KEY('s'): {
+      EDE_EditorSave();
       break;
     }
     
@@ -180,4 +198,6 @@ void EDE_ProcessKeyPressed() {
       break;
     }
   }
+  
+  quit_times = EDE_QUIT_TIME;
 }

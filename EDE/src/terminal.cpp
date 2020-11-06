@@ -92,10 +92,11 @@ void EDE_TermRefreshScreen() {
   char status[80];
   int status_len = snprintf(status, 
                             sizeof(status), 
-                            " %.20s - %d/%d lines", 
+                            " %.20s - %d/%d lines %s", 
                             EDE().FileName ? EDE().FileName : "[No name]", 
                             EDE().CursorY + 1,
-                            EDE().DisplayRows);
+                            EDE().DisplayRows,
+                            EDE().IsDirty ? "- (modified)" : "");
   if (status_len > EDE().ScreenCols) 
     status_len = EDE().ScreenCols;
   // Init message bar
@@ -240,6 +241,6 @@ void EDE_TermDrawStatusBar(FixedBuffer *fb, const char* status, int status_len) 
 //   - Escape sequence <Esc>[K: Clear the message bar
 void EDE_TermDrawMessageBar(FixedBuffer *fb, int message_len) {
   EDE_FixedBufAppend(fb, "\x1b[K", 3);  // Clear the message bar.
-  if (message_len && (time(NULL) - EDE().StatusTime) < 5) // Draw the message only 5 seconds
+  if (message_len && (time(NULL) - EDE().StatusTime) < 1) // Draw the message only 1 seconds
     EDE_FixedBufAppend(fb, EDE().StatusMsg, message_len);
 }

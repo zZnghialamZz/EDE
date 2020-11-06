@@ -56,6 +56,7 @@ struct EDE_EditorConfig {
   int ScreenRows;
   int DisplayRows;
   char* FileName;
+  bool IsDirty;
   char StatusMsg[80];
   time_t StatusTime;
   EDE_EditorRows* Rows;

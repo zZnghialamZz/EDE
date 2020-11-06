@@ -27,10 +27,12 @@
 
 #include "file_io.h"
 #include "command.h"
+#include "terminal.h"
 
-#include <string.h>  // For memcpy()
+#include <string.h>  // For memcpy(), strerror()
 #include <fcntl.h>   // For open(), O_RDWR, O_CREAT
 #include <unistd.h>  // For ftruncate(), close()
+#include <errno.h>   // For errno
 
 // -----------------------------------------------------------------------
 // Main APIs
@@ -71,6 +73,8 @@ void EDE_EditorOpen(const char* file_name) {
   }
   free(line);
   fclose(fp);
+  
+  EDE().IsDirty = false;
 }
 
 void EDE_EditorSave() {
@@ -87,10 +91,20 @@ void EDE_EditorSave() {
   //                  the data if the file is shorter or add 0 to the end if the 
   //                  file is longer.
   int fd = open(EDE().FileName, O_RDWR | O_CREAT, 0644);
-  ftruncate(fd, bufsize); 
-  write(fd, buf, bufsize);
-  close(fd);
+  if (fd != -1) {
+    if (ftruncate(fd, bufsize) != -1) {
+      if (write(fd, buf, bufsize) == bufsize) {
+        close(fd);
+        delete[] buf; // Cleanup
+        EDE().IsDirty = false;
+        EDE_TermSetStatusMessage("%d bytes has been written to disk !", bufsize);
+        return; 
+      }
+    }
+    close(fd);
+  }
   
   // Clean up
   delete[] buf;
+  EDE_TermSetStatusMessage("Cannot save! I/O Error: %s", strerror(errno));
 }

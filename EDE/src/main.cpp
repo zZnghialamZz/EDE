@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
   if (argc >= 2)
     EDE_EditorOpen(argv[1]);
   
-  EDE_TermSetStatusMessage("HELP: Ctrl-Q to quit !");
+  EDE_TermSetStatusMessage("HELP: Ctrl-S to save | Ctrl-Q to quit !");
   
   while (1) {
     // TODO(Nghia Lam): Check whether we are using GUI mode or terminal mode.
