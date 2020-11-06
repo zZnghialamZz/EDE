@@ -26,6 +26,7 @@
 // limitations under the License.
 
 #include "command.h"
+#include "utils.h"
 #include "input.h"
 #include "config.h"
 
@@ -84,17 +85,60 @@ void EDE_EditorMoveCursor(const int key) {
   
 }
 
-// Edit Chars Commands
+// Edit Commands
 // ---
+void EDE_EditorDeleteChar() {
+  if (EDE().CursorY == EDE().DisplayRows) return;
+  if (EDE().CursorX == 0 && EDE().CursorY == 0) return;
+  
+  EDE_EditorRows* row = &EDE().Rows[EDE().CursorY];
+  if (EDE().CursorX > 0) {
+    EDE_EditorRowDeleteChar(row, EDE().CursorX - 1);
+    --EDE().CursorX;
+  } else {
+    EDE().CursorX = EDE().Rows[EDE().CursorY - 1].Size;
+    EDE_EditorRowAppendString(&EDE().Rows[EDE().CursorY - 1], row->Chars, row->Size);
+    EDE_EditorDeleteRow(EDE().CursorY);
+    --EDE().CursorY;
+  }
+}
+
 void EDE_EditorInsertChar(int c) {
   if (EDE().CursorY == EDE().DisplayRows)
-    EDE_EditorAppendRow("",0);
+    EDE_EditorInsertRow(EDE().DisplayRows, "", 0);
   EDE_EditorRowInsertChar(&EDE().Rows[EDE().CursorY], EDE().CursorX, c);
   ++EDE().CursorX;
 }
 
+void EDE_EditorInsertNewLine() {
+  if (EDE().CursorX == 0) {
+    EDE_EditorInsertRow(EDE().CursorY, "", 0);
+  } else {
+    EDE_EditorRows* row = &EDE().Rows[EDE().CursorY];
+    EDE_EditorInsertRow(EDE().CursorY + 1, 
+                        &row->Chars[EDE().CursorX], 
+                        row->Size - EDE().CursorX);
+    row = &EDE().Rows[EDE().CursorY];
+    row->Size = EDE().CursorX;
+    row->Chars[row->Size] = '\0';
+    EDE_EditorUpdateRow(row);
+  }
+  ++EDE().CursorY;
+  EDE().CursorX = 0;
+}
+
 // Row Low Level API
 // ---
+void EDE_EditorRowAppendString(EDE_EditorRows* row, const char* s, size_t len) {
+  row->Chars = (char*) realloc(row->Chars, row->Size + len + 1);
+  memcpy(&row->Chars[row->Size], s, len);
+  row->Size += len;
+  row->Chars[row->Size] = '\0';
+  EDE_EditorUpdateRow(row);
+  
+  EDE().IsDirty = true;
+}
+
 void EDE_EditorRowInsertChar(EDE_EditorRows* row, int at, int c) {
   // TODO(Nghia Lam): Again, this method reallocate the memory every input...
   // -> Is there any better way to solve this?
@@ -103,6 +147,15 @@ void EDE_EditorRowInsertChar(EDE_EditorRows* row, int at, int c) {
   memmove(&row->Chars[at + 1], &row->Chars[at], row->Size - at + 1);
   ++row->Size;
   row->Chars[at] = c;
+  EDE_EditorUpdateRow(row);
+  
+  EDE().IsDirty = true;
+}
+
+void EDE_EditorRowDeleteChar(EDE_EditorRows* row, int at) {
+  if (at < 0 || at >= row->Size) return;
+  memmove(&row->Chars[at], &row->Chars[at + 1], row->Size - at);
+  --row->Size;
   EDE_EditorUpdateRow(row);
   
   EDE().IsDirty = true;
@@ -132,13 +185,16 @@ void EDE_EditorUpdateRow(EDE_EditorRows* row) {
   row->RSize = idx;
 }
 
-void EDE_EditorAppendRow(const char* s, size_t len) {
+void EDE_EditorInsertRow(int at, const char* s, size_t len) {
+  if (at < 0 || at > EDE().DisplayRows) return;
+  
   // TODO(Nghia Lam): This method reallocate each line of file, which may cause some
   // performance issue -> Need more tests and optimization ?
   EDE().Rows = (EDE_EditorRows*) realloc(EDE().Rows, 
                                          sizeof(EDE_EditorRows) * (EDE().DisplayRows + 1));
-  
-  int at = EDE().DisplayRows;
+  memmove(&EDE().Rows[at + 1], 
+          &EDE().Rows[at], 
+          sizeof(EDE_EditorRows) * (EDE().DisplayRows - at));
   
   EDE().Rows[at].Size = len;
   EDE().Rows[at].Chars = new char[len + 1];
@@ -152,4 +208,21 @@ void EDE_EditorAppendRow(const char* s, size_t len) {
   ++EDE().DisplayRows;
   
   EDE().IsDirty = true;
+}
+
+void EDE_EditorDeleteRow(int at) {
+  if (EDE().CursorY == EDE().DisplayRows)
+    return;
+  EDE_EditorFreeRow(&EDE().Rows[at]);
+  memmove(&EDE().Rows[at], 
+          &EDE().Rows[at + 1], 
+          sizeof(EDE_EditorRows) * (EDE().DisplayRows - at - 1));
+  --EDE().DisplayRows;
+  
+  EDE().IsDirty = true;
+}
+
+void EDE_EditorFreeRow(EDE_EditorRows* row) {
+  delete[] row->Render;
+  delete[] row->Chars;
 }

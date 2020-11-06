@@ -36,16 +36,23 @@
 
 // Cursor Commands
 // ---
-void EDE_EditorMoveCursor(const int key);                          // Move the cursor in the screen
+void EDE_EditorMoveCursor(const int key);  // Move the cursor in the screen
 
-// Edit Chars Commands
+// Edit Commands
 // ---
-void EDE_EditorInsertChar(int c);                                  // Insert the require char to the current row.
+void EDE_EditorDeleteChar();               // Delete the char at the position of cursor.
+void EDE_EditorInsertChar(int c);          // Insert the require char to the current row.
+void EDE_EditorInsertNewLine();            // Insert the new line at the cursor position.
 
 // Rows Low Level API
+// TODO(Nghia Lam): Consider to make this private/static
 // ---
-void EDE_EditorUpdateRow(EDE_EditorRows* row);                     // Update render status for the row
-void EDE_EditorAppendRow(const char* s, size_t len);               // Append line of text into rows memory
-void EDE_EditorRowInsertChar(EDE_EditorRows* row, int at, int c);  // Insert character at a specific position in a row
+void EDE_EditorFreeRow(EDE_EditorRows* row);                                    // Cleanup the required row.
+void EDE_EditorDeleteRow(int at);                                               // Delete the entire row.
+void EDE_EditorUpdateRow(EDE_EditorRows* row);                                  // Update render status for the row
+void EDE_EditorInsertRow(int at, const char* s, size_t len);                    // Insert line of text into specific position 
+void EDE_EditorRowDeleteChar(EDE_EditorRows* row, int at);                      // Delete character at a specific position in a row
+void EDE_EditorRowInsertChar(EDE_EditorRows* row, int at, int c);               // Insert character at a specific position in a row
+void EDE_EditorRowAppendString(EDE_EditorRows* row, const char* s, size_t len); // Append a string to the end of a row.
 
 #endif //  EDE_COMMAND_H_

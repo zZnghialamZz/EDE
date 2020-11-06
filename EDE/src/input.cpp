@@ -56,7 +56,7 @@ int EDE_ReadKey() {
     if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b';
     
     if (seq[0] == '[') {
-      if (seq[1] >= '0' && seq[1] <= '1') {
+      if (seq[1] >= '0' && seq[1] <= '9') {
         // NOTE(Nghia Lam): 
         //   - Page-Up is represent as <Esc>[5~
         //   - Page-Down is represent as <Esc>[6~
@@ -127,7 +127,7 @@ void EDE_ProcessKeyPressed() {
     // Primitives
     // ---
     case '\r': {
-      // TODO(Nghia Lam): Handle this key
+      EDE_EditorInsertNewLine();
       break;
     }
     
@@ -137,7 +137,8 @@ void EDE_ProcessKeyPressed() {
     case CTRL_KEY('h'):
     case BACKSPACE:
     case KEY_DEL: {
-      // TODO(Nghia Lam): Handle this key
+      if (c == KEY_DEL) EDE_EditorMoveCursor(KEY_RIGHT);
+      EDE_EditorDeleteChar();
       break;
     }
     
@@ -147,7 +148,7 @@ void EDE_ProcessKeyPressed() {
       break;
     }
     
-    // File IO
+    // File I/O
     // ---
     case CTRL_KEY('s'): {
       EDE_EditorSave();

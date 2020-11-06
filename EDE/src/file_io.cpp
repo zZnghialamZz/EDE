@@ -69,7 +69,7 @@ void EDE_EditorOpen(const char* file_name) {
   while ((linelen = getline(&line, &linecap, fp)) != -1) {
     while(linelen > 0 && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r'))
       --linelen;
-    EDE_EditorAppendRow(line, linelen);
+    EDE_EditorInsertRow(EDE().DisplayRows, line, linelen);
   }
   free(line);
   fclose(fp);
