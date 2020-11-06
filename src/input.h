@@ -49,7 +49,8 @@ enum EditorKey {
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
-int  EDE_ReadKey();            // Wait for key press then return the character.
-void EDE_ProcessKeyPressed();  // Wait for one key press then handle it.
+int   EDE_ReadKey();                         // Wait for key press then return the character.
+void  EDE_ProcessKeyPressed();               // Wait for one key press then handle it.
+char* EDE_MessagePrompt(const char* prompt); // Get the user prompt input in the message bar.
 
 #endif // EDE_INPUT_H_

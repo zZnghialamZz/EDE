@@ -31,7 +31,8 @@
 #include "file_io.h"
 #include "terminal.h"
 
-#include <errno.h> // for errno, EAGAIN
+#include <errno.h>      // For errno, EAGAIN
+#include <ctype.h>      // For iscntrl()
 
 // -----------------------------------------------------------------------
 // Main APIs
@@ -201,4 +202,41 @@ void EDE_ProcessKeyPressed() {
   }
   
   quit_times = EDE_QUIT_TIME;
+}
+
+char* EDE_MessagePrompt(const char* prompt) {
+  size_t buffer_size = 128;
+  char* buffer = new char[buffer_size];
+  
+  size_t buffer_len = 0;
+  buffer[0] = '\0';
+  while(1) {
+    EDE_TermSetStatusMessage(prompt, buffer);
+    // TODO(Nghia Lam): Check whether we are using GUI mode or terminal mode.
+    EDE_TermRefreshScreen();
+    int c = EDE_ReadKey();
+    if (c == '\x1b') {
+      // Quit if pressed ESC
+      EDE_TermSetStatusMessage("");
+      delete[] buffer;
+      return nullptr;
+    } else if (c == '\r') {
+      // Return if pressed Enter
+      if (buffer_len != 0) {
+        EDE_TermSetStatusMessage("");
+        return buffer;
+      }
+    } else if (c == KEY_DEL || c == BACKSPACE || c == CTRL_KEY('h')) {
+      // Handle Delete Key
+      if (buffer_len != 0) 
+        buffer[buffer_len--] = '\0';
+    } else if (!iscntrl(c) && c < 128) {
+      if (buffer_len == buffer_size - 1) {
+        buffer_size *= 2;
+        buffer = (char*) realloc(buffer, buffer_size);
+      }
+      buffer[buffer_len++] = c;
+      buffer[buffer_len] = '\0';
+    }
+  }
 }

@@ -28,6 +28,7 @@
 #include "file_io.h"
 #include "command.h"
 #include "terminal.h"
+#include "input.h"
 
 #include <string.h>  // For memcpy(), strerror()
 #include <fcntl.h>   // For open(), O_RDWR, O_CREAT
@@ -78,7 +79,13 @@ void EDE_EditorOpen(const char* file_name) {
 }
 
 void EDE_EditorSave() {
-  if (EDE().FileName == nullptr) return;
+  if (EDE().FileName == nullptr) {
+    EDE().FileName = EDE_MessagePrompt("Save as: %s");
+    if (EDE().FileName == nullptr) {
+      EDE_TermSetStatusMessage("Save aborted ..!");
+      return;
+    }
+  }
   
   int bufsize = 0;
   char* buf = EDE_EditorRowsToString(&bufsize);
