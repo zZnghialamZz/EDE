@@ -46,8 +46,8 @@ command_list = {
 		.cursor_at_end = true,
 		.cmd = 
 		{ 
-			{clean_win, .os ="win"  }, 
-			{clean_mac, .os ="mac"  }, 
+			{ clean_win, .os ="win"  }, 
+			{ clean_mac, .os ="mac"  }, 
 		}, 
 	},
  
@@ -59,8 +59,8 @@ command_list = {
 		.cursor_at_end = true,
 		.cmd = 
 		{ 
-			{build_win, .os ="win" }, 	
-			{build_mac, .os ="mac" }, 
+			{ build_win, .os ="win" }, 	
+			{ build_mac, .os ="mac" }, 
 		},
 	},
 

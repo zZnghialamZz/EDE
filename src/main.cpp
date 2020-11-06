@@ -35,6 +35,7 @@
 // Here is a todo list:
 // ---
 // TODO(Nghia Lam): Walk through the tutorial of kilo.
+// TODO(Nghia Lam): Add support for Windows
 // TODO(Nghia Lam): Re-create it in C++17 with data oriented mindset.
 // TODO(Nghia Lam): Support both terminal mode and graphical mode.
 // TODO(Nghia Lam): Multiple file support
