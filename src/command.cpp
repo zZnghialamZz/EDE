@@ -29,6 +29,7 @@
 #include "utils.h"
 #include "input.h"
 #include "config.h"
+#include "syntax.h"
 
 #include <string.h> // For memmove()
 
@@ -83,6 +84,79 @@ void EDE_EditorMoveCursor(const int key) {
   if (EDE().CursorX > row_len)
     EDE().CursorX = row_len;
   
+}
+
+// Find Commands
+// ---
+static void EDE_EditorFindCallback(char* query, int key) {
+  static int last_match = -1;
+  static int direction  =  1;
+  
+  // NOTE(Nghia Lam): Support search forward and backward
+  switch(key) {
+    case '\r':
+    case '\x1b': {
+      last_match = -1;
+      direction  =  1;
+      return;
+    }
+    
+    case KEY_RIGHT:
+    case KEY_DOWN: {
+      direction = 1;
+      break;
+    }
+    
+    case KEY_LEFT:
+    case KEY_UP: {
+      direction = -1;
+      break;
+    }
+    
+    default: {
+      last_match = -1;
+      direction  =  1;
+      break;
+    }
+  }
+  
+  if (last_match == -1) direction = 1;
+  int current = last_match;
+  // TODO(Nghia Lam): This is not quite optimal for searching, 
+  // maybe I should think of another idea to make this better.
+  for (int i = 0; i < EDE().DisplayRows; ++i) {
+    current += direction;
+    if (current == -1) current = EDE().DisplayRows - 1;
+    else if (current == EDE().DisplayRows) current = 0;
+    
+    EDE_EditorRows* row = &EDE().Rows[current];
+    char* match = strstr(row->Render, query);
+    if (match) {
+      last_match      = current;
+      EDE().CursorY   = current;
+      EDE().CursorX   = match - row->Render;
+      EDE().RowOffset = EDE().DisplayRows;
+      break;
+    }
+  }
+}
+
+void EDE_EditorFind() {
+  int saved_cx     = EDE().CursorX;
+  int saved_cy     = EDE().CursorY;
+  int saved_coloff = EDE().ColOffset;
+  int saved_rowoff = EDE().RowOffset;
+  
+  char* query = EDE_MessagePrompt("Search: %s (Use ESC | Arrows | Enter)",
+                                  EDE_EditorFindCallback);
+  if (query) {
+    delete[] query;
+  } else {
+    EDE().CursorX   = saved_cx;
+    EDE().CursorY   = saved_cy;
+    EDE().ColOffset = saved_coloff;
+    EDE().RowOffset = saved_rowoff;
+  }
 }
 
 // Edit Commands
@@ -183,6 +257,8 @@ void EDE_EditorUpdateRow(EDE_EditorRows* row) {
   }
   row->Render[idx] = '\0';
   row->RSize = idx;
+  
+  EDE_EditorUpdateSyntax(row);
 }
 
 void EDE_EditorInsertRow(int at, const char* s, size_t len) {
@@ -196,13 +272,14 @@ void EDE_EditorInsertRow(int at, const char* s, size_t len) {
           &EDE().Rows[at], 
           sizeof(EDE_EditorRows) * (EDE().DisplayRows - at));
   
-  EDE().Rows[at].Size = len;
+  EDE().Rows[at].Size  = len;
   EDE().Rows[at].Chars = new char[len + 1];
   memcpy(EDE().Rows[at].Chars, s, len);
   EDE().Rows[at].Chars[len] = '\0';
   
-  EDE().Rows[at].RSize = 0;
-  EDE().Rows[at].Render = nullptr;
+  EDE().Rows[at].RSize     = 0;
+  EDE().Rows[at].Render    = nullptr;
+  EDE().Rows[at].HighLight = nullptr;
   EDE_EditorUpdateRow(&EDE().Rows[at]);
   
   ++EDE().DisplayRows;
@@ -223,6 +300,7 @@ void EDE_EditorDeleteRow(int at) {
 }
 
 void EDE_EditorFreeRow(EDE_EditorRows* row) {
+  delete[] row->HighLight;
   delete[] row->Render;
   delete[] row->Chars;
 }

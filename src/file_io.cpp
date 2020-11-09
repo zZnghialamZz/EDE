@@ -80,7 +80,7 @@ void EDE_EditorOpen(const char* file_name) {
 
 void EDE_EditorSave() {
   if (EDE().FileName == nullptr) {
-    EDE().FileName = EDE_MessagePrompt("Save as: %s");
+    EDE().FileName = EDE_MessagePrompt("Save as: %s", nullptr);
     if (EDE().FileName == nullptr) {
       EDE_TermSetStatusMessage("Save aborted ..!");
       return;

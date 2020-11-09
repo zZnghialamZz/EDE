@@ -6,7 +6,7 @@
 //                        ---
 //              Ethan Development Editor
 // =====================================================
-// @file input.h
+// @file syntax.cpp
 // @author Nghia Lam <nghialam12795@gmail.com>
 //
 // @brief
@@ -25,32 +25,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef EDE_INPUT_H_
-#define EDE_INPUT_H_
+#include "syntax.h"
 
-#define CTRL_KEY(key) ((key) & 0x1f)
-
-// -----------------------------------------------------------------------
-// Type Definition & Structure
-// -----------------------------------------------------------------------
-enum EditorKey {
-  BACKSPACE = 127,
-  KEY_LEFT  = 1000,   // For not overlaping with input key
-  KEY_UP    ,
-  KEY_RIGHT ,
-  KEY_DOWN  ,
-  KEY_DEL   ,
-  KEY_HOME  ,
-  KEY_END   ,
-  PAGE_DOWN ,
-  PAGE_UP   ,
-};
+#include <ctype.h>   // For isdigit()
+#include <string.h>  // For memset()
 
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
-int   EDE_ReadKey();                                                       // Wait for key press then return the character.
-void  EDE_ProcessKeyPressed();                                             // Wait for one key press then handle it.
-char* EDE_MessagePrompt(const char* prompt, void (*callback)(char*, int)); // Get the user prompt input in the message bar.
+void EDE_EditorUpdateSyntax(EDE_EditorRows* row) {
+  // TODO(Nghia Lam): Again this function realloc everytime it is called 
+  // to update the syntax highlighting, which is not good in my opinion.
+  row->HighLight = (unsigned char*) realloc(row->HighLight, row->RSize);
+  memset(row->HighLight, HL_NORMAL, row->RSize);
+  
+  for (int i = 0; i < row->RSize; ++i) {
+    if (isdigit(row->Render[i]))
+      row->HighLight[i] = HL_NUMBER;
+  }
+}
 
-#endif // EDE_INPUT_H_
+// TODO(Nghia Lam): Abstract this for easy theme maker
+int  EDE_EditorSyntaxToColor(int highlight) {
+  switch(highlight) {
+    case HL_NUMBER: return 31;
+    default: return 37;
+  }
+}

@@ -28,6 +28,7 @@
 #include "terminal.h"
 #include "utils.h"
 #include "config.h"
+#include "syntax.h"
 
 #include <ctype.h>      // For iscntrl()
 #include <stdarg.h>     // For va_list(), va_start(), va_end()
@@ -110,10 +111,32 @@ void EDE_TermRefreshScreen() {
            EDE().CursorY - EDE().RowOffset + 1,  // Convert to 1-based Index
            EDE().CursorX - EDE().ColOffset + 1); // Convert to 1-based Index
   // Input Drawing Buffer
-  int input_buf = 0;
+  int input_buf     = 0;
+  int current_color = -1;
   for(int i = 0; i < EDE().DisplayRows; ++i) {
-    input_buf += (EDE().Rows[i].Size > EDE().ScreenCols) 
-      ? EDE().ScreenCols : EDE().Rows[i].Size;
+    int row_size = (EDE().Rows[i].Size > EDE().ScreenCols) ? EDE().ScreenCols : EDE().Rows[i].Size;
+    input_buf += row_size;
+    // Syntax coloring add to buffer
+    // TODO(Nghia Lam): Doing this way is optimal with memory but its speed may not be good.
+    // Since we loop through all the file 2 two just to store the memory and then drawing...
+    unsigned char* hl = &EDE().Rows[i].HighLight[EDE().ColOffset];
+    for (int j = 0; j < row_size; ++j) {
+      if (hl[j] == HL_NORMAL) {
+        if (current_color != -1) {
+          input_buf += 5; // Change to text default color
+          current_color = -1;
+        }
+      } else {
+        int color = EDE_EditorSyntaxToColor(hl[j]);
+        if (color != current_color) {
+          current_color = color;
+          char buf_color[16];
+          int clen = snprintf(buf_color, sizeof(buf_color), "\x1b[%dm", color);
+          input_buf += clen;
+        }
+      }
+    }
+    input_buf += 5; // Reset to text default color
   }
   
   // NOTE(Nghia Lam): A fixed buffer to contain all the command lists for refresh
@@ -208,11 +231,31 @@ void EDE_TermDrawRows(FixedBuffer *fb, const char* welcome_msg, int welcome_len)
     } else {
       int len = EDE().Rows[file_row].RSize - EDE().ColOffset;
       if (len < 0) len = 0;
-      if (len > EDE().ScreenCols)
-        len = EDE().ScreenCols;
-      EDE_FixedBufAppend(fb, 
-                         &EDE().Rows[file_row].Render[EDE().ColOffset], 
-                         len);
+      if (len > EDE().ScreenCols) len = EDE().ScreenCols;
+      
+      // Render each text with different color based on syntax highlighting
+      char* c           = &EDE().Rows[file_row].Render[EDE().ColOffset];
+      unsigned char* hl = &EDE().Rows[file_row].HighLight[EDE().ColOffset];
+      int current_color = -1;
+      
+      for (int i = 0; i < len; ++i) {
+        if (hl[i] == HL_NORMAL) {
+          if (current_color != -1) {
+            current_color = -1;
+            EDE_FixedBufAppend(fb, "\x1b[39m", 5);
+          }
+        } else {
+          int color = EDE_EditorSyntaxToColor(hl[i]);
+          if (color != current_color) {
+            current_color = color;
+            char buf_color[16];
+            int clen = snprintf(buf_color, sizeof(buf_color), "\x1b[%dm", color);
+            EDE_FixedBufAppend(fb, buf_color, clen); 
+          }
+        }
+        EDE_FixedBufAppend(fb, &c[i], 1);      // Append the character
+      }
+      EDE_FixedBufAppend(fb, "\x1b[39m", 5); // Reset to text color default
     }
     
     EDE_FixedBufAppend(fb, "\x1b[K", 3);  // Clear the line

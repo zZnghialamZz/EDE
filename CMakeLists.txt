@@ -104,6 +104,7 @@ set(HEADERS
 	"${EDE_SRC_DIR}/command.h"
 	"${EDE_SRC_DIR}/file_io.h"
 	"${EDE_SRC_DIR}/memory.h"
+	"${EDE_SRC_DIR}/syntax.h"
 	"${EDE_SRC_DIR}/utils.h"
 	"${EDE_SRC_DIR}/input.h"
 )
@@ -113,6 +114,7 @@ set(SOURCES
 	"${EDE_SRC_DIR}/command.cpp"
 	"${EDE_SRC_DIR}/file_io.cpp"
 	"${EDE_SRC_DIR}/memory.cpp"
+	"${EDE_SRC_DIR}/syntax.cpp"
 	"${EDE_SRC_DIR}/utils.cpp"
 	"${EDE_SRC_DIR}/input.cpp"
 	"${EDE_SRC_DIR}/main.cpp"

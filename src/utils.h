@@ -46,6 +46,7 @@ struct EDE_EditorRows {
   int RSize;
   char* Chars;
   char* Render;
+  unsigned char* HighLight;
 };
 
 struct EDE_EditorConfig {

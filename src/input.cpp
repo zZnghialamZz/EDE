@@ -149,6 +149,11 @@ void EDE_ProcessKeyPressed() {
       break;
     }
     
+    case CTRL_KEY('f'): {
+      EDE_EditorFind();
+      break;
+    }
+    
     // File I/O
     // ---
     case CTRL_KEY('s'): {
@@ -204,7 +209,7 @@ void EDE_ProcessKeyPressed() {
   quit_times = EDE_QUIT_TIME;
 }
 
-char* EDE_MessagePrompt(const char* prompt) {
+char* EDE_MessagePrompt(const char* prompt, void (*callback)(char*, int)) {
   size_t buffer_size = 128;
   char* buffer = new char[buffer_size];
   
@@ -218,19 +223,22 @@ char* EDE_MessagePrompt(const char* prompt) {
     if (c == '\x1b') {
       // Quit if pressed ESC
       EDE_TermSetStatusMessage("");
+      if (callback) callback(buffer, c);
       delete[] buffer;
       return nullptr;
     } else if (c == '\r') {
       // Return if pressed Enter
       if (buffer_len != 0) {
         EDE_TermSetStatusMessage("");
+        if (callback) callback(buffer, c);
         return buffer;
       }
     } else if (c == KEY_DEL || c == BACKSPACE || c == CTRL_KEY('h')) {
       // Handle Delete Key
       if (buffer_len != 0) 
-        buffer[buffer_len--] = '\0';
+        buffer[--buffer_len] = '\0';
     } else if (!iscntrl(c) && c < 128) {
+      // Normal Input
       if (buffer_len == buffer_size - 1) {
         buffer_size *= 2;
         buffer = (char*) realloc(buffer, buffer_size);
@@ -238,5 +246,7 @@ char* EDE_MessagePrompt(const char* prompt) {
       buffer[buffer_len++] = c;
       buffer[buffer_len] = '\0';
     }
+    
+    if (callback) callback(buffer, c);
   }
 }

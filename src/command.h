@@ -38,6 +38,10 @@
 // ---
 void EDE_EditorMoveCursor(const int key);  // Move the cursor in the screen
 
+// Find Commands
+// ---
+void EDE_EditorFind();                     // Find the character in the message prompt
+
 // Edit Commands
 // ---
 void EDE_EditorDeleteChar();               // Delete the char at the position of cursor.

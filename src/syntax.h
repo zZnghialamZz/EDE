@@ -6,7 +6,7 @@
 //                        ---
 //              Ethan Development Editor
 // =====================================================
-// @file input.h
+// @file syntax.h
 // @author Nghia Lam <nghialam12795@gmail.com>
 //
 // @brief
@@ -25,32 +25,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef EDE_INPUT_H_
-#define EDE_INPUT_H_
+#ifndef EDE_SYNTAX_H_
+#define EDE_SYNTAX_H_
 
-#define CTRL_KEY(key) ((key) & 0x1f)
+#include "utils.h"
 
 // -----------------------------------------------------------------------
-// Type Definition & Structure
+// Structure and type definition
 // -----------------------------------------------------------------------
-enum EditorKey {
-  BACKSPACE = 127,
-  KEY_LEFT  = 1000,   // For not overlaping with input key
-  KEY_UP    ,
-  KEY_RIGHT ,
-  KEY_DOWN  ,
-  KEY_DEL   ,
-  KEY_HOME  ,
-  KEY_END   ,
-  PAGE_DOWN ,
-  PAGE_UP   ,
+enum EditorHighlight {
+  HL_NORMAL = 0,
+  HL_NUMBER
 };
 
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
-int   EDE_ReadKey();                                                       // Wait for key press then return the character.
-void  EDE_ProcessKeyPressed();                                             // Wait for one key press then handle it.
-char* EDE_MessagePrompt(const char* prompt, void (*callback)(char*, int)); // Get the user prompt input in the message bar.
+void EDE_EditorUpdateSyntax(EDE_EditorRows* row);    // Update the syntax highlighting
+int  EDE_EditorSyntaxToColor(int highlight);         // Return the color based on syntax
 
-#endif // EDE_INPUT_H_
+#endif // EDE_SYNTAX_H_
