@@ -93,8 +93,9 @@ void EDE_TermRefreshScreen() {
   char status[80];
   int status_len = snprintf(status, 
                             sizeof(status), 
-                            " %.20s - %d/%d lines %s", 
+                            " %.20s [%s] - %d/%d lines %s", 
                             EDE().FileName ? EDE().FileName : "[No name]", 
+                            EDE().Syntax ? EDE().Syntax->FileType : "No file type",
                             EDE().CursorY + 1,
                             EDE().DisplayRows,
                             EDE().IsDirty ? "- (modified)" : "");

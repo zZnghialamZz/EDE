@@ -41,6 +41,8 @@
 // -----------------------------------------------------------------------
 // Structure and type definition
 // -----------------------------------------------------------------------
+struct EDE_EditorSyntax;
+
 struct EDE_EditorRows {
   int Size;
   int RSize;
@@ -61,6 +63,7 @@ struct EDE_EditorConfig {
   char StatusMsg[80];
   time_t StatusTime;
   EDE_EditorRows* Rows;
+  EDE_EditorSyntax* Syntax;
   termios DefaultSettings;    // Default configuration of terminal
 };
 

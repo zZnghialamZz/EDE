@@ -26,6 +26,7 @@
 // limitations under the License.
 
 #include "utils.h"
+#include "syntax.h"
 #include "terminal.h"
 
 // -----------------------------------------------------------------------
@@ -97,6 +98,7 @@ void EDE_InitEditor() {
   E.IsDirty      = false;
   E.Rows         = nullptr;
   E.FileName     = nullptr;
+  E.Syntax       = nullptr;
   
   if (EDE_TermGetSize(&E.ScreenCols, &E.ScreenRows) == -1)
     EDE_ErrorHandler("EDE_TermGetSize");

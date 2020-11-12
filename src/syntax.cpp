@@ -28,20 +28,83 @@
 #include "syntax.h"
 
 #include <ctype.h>   // For isdigit()
-#include <string.h>  // For memset()
+#include <string.h>  // For memset(), strchr(), strrchr()
+
+// -----------------------------------------------------------------------
+// File type support definition
+// -----------------------------------------------------------------------
+static char* HL_C_Extensions[] = { 
+  (char*) ".c", 
+  (char*) ".h", 
+  (char*) ".cpp", 
+  NULL
+};
+static EDE_EditorSyntax HLDB[] = {
+  {
+    (char*) "c",
+    HL_C_Extensions,
+    HLFLAGS_NUMBERS
+  }
+};
+
+// -----------------------------------------------------------------------
+// Static Helpers
+// -----------------------------------------------------------------------
+static bool IsSeparator(int c) {
+  return isspace(c) || c == '\0' || strchr(",.()+-/*=~%<>[];", c) != NULL;
+}
 
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
+void EDE_EditorSelectSyntax() {
+  EDE().Syntax = nullptr; // Cleanup
+  if (!EDE().FileName) return;
+  
+  char* ext = strrchr(EDE().FileName, '.');
+  for (int hl = 0; hl < EDE_HLDB_Length(); ++hl) {
+    EDE_EditorSyntax* s = &HLDB[hl];
+    unsigned int i = 0;
+    while(s->FileMatch[i]) {
+      bool is_ext = (s->FileMatch[i][0] == '.');
+      if ((is_ext && ext && !strcmp(ext, s->FileMatch[i])) ||
+          (!is_ext && strstr(EDE().FileName, s->FileMatch[i]))) {
+        EDE().Syntax = s;
+        return;
+      }
+      ++i;
+    }
+  }
+}
+
 void EDE_EditorUpdateSyntax(EDE_EditorRows* row) {
   // TODO(Nghia Lam): Again this function realloc everytime it is called 
   // to update the syntax highlighting, which is not good in my opinion.
   row->HighLight = (unsigned char*) realloc(row->HighLight, row->RSize);
   memset(row->HighLight, HL_NORMAL, row->RSize);
   
-  for (int i = 0; i < row->RSize; ++i) {
-    if (isdigit(row->Render[i]))
-      row->HighLight[i] = HL_NUMBER;
+  if (!EDE().Syntax) return;
+  
+  bool prev_separator = true;
+  int i = 0;
+  
+  while (i < row->RSize) {
+    char c = row->Render[i];
+    unsigned char prev_hl = (i > 0) ? row->HighLight[i - 1] : HL_NORMAL;
+    
+    // Hightlight numbers
+    if (EDE().Syntax->Flags & HLFLAGS_NUMBERS) {
+      if ((isdigit(c) && (prev_separator || prev_hl == HL_NUMBER)) ||
+          (c == '.' && prev_hl == HL_NUMBER)) {
+        row->HighLight[i] = HL_NUMBER;
+        ++i;
+        prev_separator = false;
+        continue;
+      }
+    }
+    
+    prev_separator = IsSeparator(c);
+    ++i;
   }
 }
 
@@ -49,6 +112,11 @@ void EDE_EditorUpdateSyntax(EDE_EditorRows* row) {
 int  EDE_EditorSyntaxToColor(int highlight) {
   switch(highlight) {
     case HL_NUMBER: return 31;
+    case HL_MATCH : return 34;
     default: return 37;
   }
 }
+
+// HLDB API
+EDE_EditorSyntax* EDE_HLDB() { return HLDB; }
+int EDE_HLDB_Length() { return sizeof(HLDB) / sizeof(HLDB[0]); }

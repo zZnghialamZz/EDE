@@ -35,13 +35,28 @@
 // -----------------------------------------------------------------------
 enum EditorHighlight {
   HL_NORMAL = 0,
-  HL_NUMBER
+  HL_NUMBER    ,
+  HL_MATCH
+};
+
+enum EditorHighlightFlags {
+  HLFLAGS_NUMBERS = 1 << 0,
+};
+
+struct EDE_EditorSyntax {
+  char* FileType;
+  char** FileMatch;
+  int Flags;
 };
 
 // -----------------------------------------------------------------------
 // Main APIs
 // -----------------------------------------------------------------------
+void EDE_EditorSelectSyntax();                       // Tries to match the current filename to one of the filematch in HLDB
 void EDE_EditorUpdateSyntax(EDE_EditorRows* row);    // Update the syntax highlighting
 int  EDE_EditorSyntaxToColor(int highlight);         // Return the color based on syntax
+
+EDE_EditorSyntax* EDE_HLDB();                        // Return the Hightlight Database
+int               EDE_HLDB_Length();                 // Return the length of the Highlight Database
 
 #endif // EDE_SYNTAX_H_

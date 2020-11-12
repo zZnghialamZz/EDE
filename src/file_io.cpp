@@ -28,6 +28,7 @@
 #include "file_io.h"
 #include "command.h"
 #include "terminal.h"
+#include "syntax.h"
 #include "input.h"
 
 #include <string.h>  // For memcpy(), strerror()
@@ -60,6 +61,8 @@ void EDE_EditorOpen(const char* file_name) {
   delete[] EDE().FileName; // Clean up current open file
   EDE().FileName = strdup(file_name);
   
+  EDE_EditorSelectSyntax();
+  
   FILE *fp = fopen(file_name, "r");
   if (!fp) EDE_ErrorHandler("fopen");
   
@@ -85,6 +88,8 @@ void EDE_EditorSave() {
       EDE_TermSetStatusMessage("Save aborted ..!");
       return;
     }
+    
+    EDE_EditorSelectSyntax();
   }
   
   int bufsize = 0;

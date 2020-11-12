@@ -92,6 +92,17 @@ static void EDE_EditorFindCallback(char* query, int key) {
   static int last_match = -1;
   static int direction  =  1;
   
+  static int saved_hl_line;
+  static char* saved_hl = nullptr;
+  
+  if (saved_hl) {
+    memcpy(EDE().Rows[saved_hl_line].HighLight, 
+           saved_hl, 
+           EDE().Rows[saved_hl_line].RSize);
+    delete[] saved_hl;
+    saved_hl = nullptr;
+  }
+  
   // NOTE(Nghia Lam): Support search forward and backward
   switch(key) {
     case '\r':
@@ -136,6 +147,11 @@ static void EDE_EditorFindCallback(char* query, int key) {
       EDE().CursorY   = current;
       EDE().CursorX   = match - row->Render;
       EDE().RowOffset = EDE().DisplayRows;
+      
+      saved_hl_line = current;
+      saved_hl      = new char[row->RSize];
+      memcpy(saved_hl, row->HighLight, row->RSize);
+      memset(&row->HighLight[match - row->Render], HL_MATCH, strlen(query));
       break;
     }
   }
