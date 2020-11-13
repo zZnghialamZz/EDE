@@ -33,17 +33,21 @@
 // -----------------------------------------------------------------------
 // File type support definition
 // -----------------------------------------------------------------------
-static char* HL_C_Extensions[] = { 
-  (char*) ".c", 
-  (char*) ".h", 
-  (char*) ".cpp", 
-  NULL
+static const char* HL_C_Extensions[] = { ".h", ".c", ".cpp", NULL };
+static const char* HL_C_KeyWords[] = {
+  "switch", "if", "while", "for", "break", "continue", "return", "else",
+  "struct", "union", "typedef", "static", "enum", "class", "case",
+  
+  "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
+  "void|", NULL
 };
 static EDE_EditorSyntax HLDB[] = {
   {
-    (char*) "c",
+    "c",
     HL_C_Extensions,
-    HLFLAGS_NUMBERS
+    HL_C_KeyWords,
+    "//",
+    HLFLAGS_NUMBER | HLFLAGS_STRING
   }
 };
 
@@ -70,6 +74,10 @@ void EDE_EditorSelectSyntax() {
       if ((is_ext && ext && !strcmp(ext, s->FileMatch[i])) ||
           (!is_ext && strstr(EDE().FileName, s->FileMatch[i]))) {
         EDE().Syntax = s;
+        
+        for (int filerow = 0; filerow < EDE().DisplayRows; ++filerow)
+          EDE_EditorUpdateSyntax(&EDE().Rows[filerow]);
+        
         return;
       }
       ++i;
@@ -85,19 +93,79 @@ void EDE_EditorUpdateSyntax(EDE_EditorRows* row) {
   
   if (!EDE().Syntax) return;
   
+  char* scs   = (char*) EDE().Syntax->SingleLineComment;
+  int scs_len = scs ? strlen(scs) : 0;
+  
+  char** keywords = (char**) EDE().Syntax->KeyWords;
+  
   bool prev_separator = true;
+  int inside_string   = 0;
   int i = 0;
   
   while (i < row->RSize) {
     char c = row->Render[i];
     unsigned char prev_hl = (i > 0) ? row->HighLight[i - 1] : HL_NORMAL;
     
+    // Highlight comment
+    if (scs_len && !inside_string) {
+      if (!strncmp(&row->Render[i], scs, scs_len)) {
+        memset(&row->HighLight[i], HL_COMMENT, row->RSize - i);
+        break;
+      }
+    }
+    
+    // Highlight strings
+    if (EDE().Syntax->Flags &HLFLAGS_STRING) {
+      if (inside_string) {
+        row->HighLight[i] = HL_STRING;
+        if (c == '\\' && i + 1 < row->Size) {
+          row->HighLight[i + 1] = HL_STRING;
+          i += 2;
+          continue;
+        }
+        
+        if (c == inside_string) inside_string = 0;
+        ++i;
+        prev_separator = true;
+        continue;
+        
+      } else {
+        if (c == '"' || c == '\'') {
+          inside_string = c;
+          row->HighLight[i] = HL_STRING;
+          ++i;
+          continue;
+        }
+      }
+    }
+    
     // Hightlight numbers
-    if (EDE().Syntax->Flags & HLFLAGS_NUMBERS) {
+    if (EDE().Syntax->Flags & HLFLAGS_NUMBER) {
       if ((isdigit(c) && (prev_separator || prev_hl == HL_NUMBER)) ||
           (c == '.' && prev_hl == HL_NUMBER)) {
         row->HighLight[i] = HL_NUMBER;
         ++i;
+        prev_separator = false;
+        continue;
+      }
+    }
+    
+    // Highlight key words
+    if (prev_separator) {
+      int j;
+      for (j = 0; keywords[j]; ++j) {
+        int klen = strlen(keywords[j]);
+        bool ktype = keywords[j][klen - 1] == '|';
+        if (ktype) --klen;
+        
+        if (!strncmp(&row->Render[i], keywords[j], klen) &&
+            IsSeparator(row->Render[i + klen])) {
+          memset(&row->HighLight[i], ktype ? HL_KEYTYPE : HL_KEYWORD, klen);
+          i += klen;
+          break;
+        }
+      }
+      if (keywords[j] != NULL) {
         prev_separator = false;
         continue;
       }
@@ -111,8 +179,12 @@ void EDE_EditorUpdateSyntax(EDE_EditorRows* row) {
 // TODO(Nghia Lam): Abstract this for easy theme maker
 int  EDE_EditorSyntaxToColor(int highlight) {
   switch(highlight) {
-    case HL_NUMBER: return 31;
-    case HL_MATCH : return 34;
+    case HL_COMMENT: return 36;
+    case HL_KEYWORD: return 33;
+    case HL_KEYTYPE: return 32;
+    case HL_NUMBER : return 31;
+    case HL_STRING : return 35;
+    case HL_MATCH  : return 34;
     default: return 37;
   }
 }

@@ -34,18 +34,25 @@
 // Structure and type definition
 // -----------------------------------------------------------------------
 enum EditorHighlight {
-  HL_NORMAL = 0,
-  HL_NUMBER    ,
+  HL_NORMAL  = 0,
+  HL_COMMENT    ,
+  HL_KEYWORD    ,
+  HL_KEYTYPE    ,
+  HL_NUMBER     ,
+  HL_STRING     ,
   HL_MATCH
 };
 
 enum EditorHighlightFlags {
-  HLFLAGS_NUMBERS = 1 << 0,
+  HLFLAGS_NUMBER = 1 << 0,
+  HLFLAGS_STRING = 1 << 1,
 };
 
 struct EDE_EditorSyntax {
-  char* FileType;
-  char** FileMatch;
+  const char* FileType;
+  const char** FileMatch;
+  const char** KeyWords;
+  const char* SingleLineComment;
   int Flags;
 };
 
