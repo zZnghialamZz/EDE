@@ -17,14 +17,17 @@
 // ---
 // TODO(Nghia Lam): 
 //  - [ ] Walk through the tutorial of kilo.
-//  - [ ] Add support for Windows
-//  - [ ] Support both terminal mode and graphical mode.
-//  - [ ] Multiple file support
+//  - [ ] Add support for Windows.
+//  - [ ] Support both terminal mode and graphical mode <- Is this necessary?
+//  - [ ] Multiple file support.
 // --------------------------------------------------------------------------
 
 // --------------------------------------------------------------------------
 // Entry point
 // --------------------------------------------------------------------------
+#include <stdio.h>
+
 int main(int argc, char* argv[]) {
+  printf("Hello world\n");
   return 0;
 }
